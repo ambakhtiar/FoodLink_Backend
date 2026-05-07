@@ -15,6 +15,19 @@ router.post(
   PostController.createPostHandler,
 );
 
+router.get('/my-posts', auth(), PostController.getMyPostsHandler);
+
 router.get('/nearby', PostController.nearbyPostsHandler);
+
+router.get('/:id', PostController.getPostByIdHandler);
+
+router.patch(
+  '/:id',
+  auth(),
+  validateRequest(PostValidation.updatePostSchema),
+  PostController.updatePostHandler,
+);
+
+router.delete('/:id', auth(), PostController.deletePostHandler);
 
 export const PostRoutes = router;

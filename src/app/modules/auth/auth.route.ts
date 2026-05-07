@@ -3,6 +3,8 @@ import validateRequest from '../../middlewares/validateRequest';
 import { AuthController } from './auth.controller';
 import { AuthValidation } from './auth.validation';
 
+import auth from '../../middlewares/auth';
+
 const router = Router();
 
 router.post(
@@ -16,5 +18,7 @@ router.post(
   validateRequest(AuthValidation.loginValidationSchema),
   AuthController.loginUser,
 );
+
+router.get('/me', auth(), AuthController.getMeHandler);
 
 export const AuthRoutes = router;

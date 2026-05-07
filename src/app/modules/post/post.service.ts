@@ -1,4 +1,6 @@
 import { Post, PostType, Prisma } from '@prisma/client';
+import httpStatus from 'http-status';
+import AppError from '../../utils/AppError';
 import prisma from '../../utils/prisma';
 import { AiService } from '../ai/ai.service';
 
@@ -119,7 +121,171 @@ const fetchAvailablePostsWithinRadius = async (
   };
 };
 
+const getMyPosts = async (
+  userId: string,
+  page: number = 1,
+  limit: number = 10,
+) => {
+  const skip = (page - 1) * limit;
+
+  const [posts, totalCount] = await Promise.all([
+    prisma.post.findMany({
+      where: {
+        authorId: userId,
+      },
+      include: {
+        _count: {
+          select: {
+            transactionRequests: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      skip,
+      take: limit,
+    }),
+    prisma.post.count({
+      where: {
+        authorId: userId,
+      },
+    }),
+  ]);
+
+  return {
+    meta: {
+      totalCount,
+      currentPage: page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit),
+    },
+    data: posts,
+  };
+};
+
+const getPostById = async (id: string) => {
+  const post = await prisma.post.findUnique({
+    where: { id },
+    include: {
+      author: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+        },
+      },
+      transactionRequests: {
+        include: {
+          actor: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!post) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Post not found');
+  }
+
+  return post;
+};
+
+const updatePost = async (
+  id: string,
+  userId: string,
+  payload: Partial<Post>,
+) => {
+  const post = await prisma.post.findUnique({
+    where: { id },
+  });
+
+  if (!post) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Post not found');
+  }
+
+  if (post.authorId !== userId) {
+    throw new AppError(httpStatus.FORBIDDEN, 'You can only update your own posts');
+  }
+
+  // Check if approved transactions exist
+  const approvedTransaction = await prisma.transactionRequest.findFirst({
+    where: {
+      postId: id,
+      status: 'APPROVED',
+    },
+  });
+
+  if (approvedTransaction) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'Cannot update post with approved transactions',
+    );
+  }
+
+  const result = await prisma.post.update({
+    where: { id },
+    data: payload,
+  });
+
+  return result;
+};
+
+const deletePost = async (id: string, userId: string) => {
+  const post = await prisma.post.findUnique({
+    where: { id },
+  });
+
+  if (!post) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Post not found');
+  }
+
+  if (post.authorId !== userId) {
+    throw new AppError(httpStatus.FORBIDDEN, 'You can only delete your own posts');
+  }
+
+  if (post.status !== 'AVAILABLE' && post.status !== 'EXPIRED') {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'Can only delete AVAILABLE or EXPIRED posts',
+    );
+  }
+
+  // Check if pending or approved transactions exist
+  const activeTransaction = await prisma.transactionRequest.findFirst({
+    where: {
+      postId: id,
+      status: {
+        in: ['PENDING', 'APPROVED'],
+      },
+    },
+  });
+
+  if (activeTransaction) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'Cannot delete post with pending or approved transactions',
+    );
+  }
+
+  await prisma.post.delete({
+    where: { id },
+  });
+
+  return null;
+};
+
 export const PostService = {
   createPost,
   fetchAvailablePostsWithinRadius,
+  getMyPosts,
+  getPostById,
+  updatePost,
+  deletePost,
 };

@@ -26,4 +26,11 @@ router.patch(
     AdminController.verifyNGO,
 );
 
+router.patch(
+    '/users/:userId/ban',
+    auth(UserRole.ADMIN),
+    validateRequest(AdminValidation.verifyNGOSchema),
+    AdminController.toggleBan,
+);
+
 export const AdminRoutes = router;

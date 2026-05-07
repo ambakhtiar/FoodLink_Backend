@@ -1,0 +1,73 @@
+import { Review, TransactionStatus } from '@prisma/client';
+import httpStatus from 'http-status';
+import AppError from '../../utils/AppError';
+import prisma from '../../utils/prisma';
+
+const createReview = async (payload: {
+  reviewerId: string;
+  revieweeId: string;
+  transactionId: string;
+  rating: number;
+  comment?: string;
+}): Promise<Review> => {
+  const transaction = await prisma.transactionRequest.findUnique({
+    where: { id: payload.transactionId },
+  });
+
+  if (!transaction) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Transaction not found');
+  }
+
+  if (transaction.status !== TransactionStatus.COMPLETED) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'Can only review completed transactions',
+    );
+  }
+
+  const existingReview = await prisma.review.findFirst({
+    where: {
+      reviewerId: payload.reviewerId,
+      transactionId: payload.transactionId,
+    },
+  });
+
+  if (existingReview) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'You have already reviewed this transaction',
+    );
+  }
+
+  const review = await prisma.$transaction(async (tx) => {
+    const created = await tx.review.create({
+      data: {
+        reviewerId: payload.reviewerId,
+        revieweeId: payload.revieweeId,
+        transactionId: payload.transactionId,
+        rating: payload.rating,
+        comment: payload.comment,
+      },
+    });
+
+    const reviews = await tx.review.findMany({
+      where: { revieweeId: payload.revieweeId },
+    });
+
+    const avgRating =
+      reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+
+    await tx.user.update({
+      where: { id: payload.revieweeId },
+      data: { impactScore: avgRating },
+    });
+
+    return created;
+  });
+
+  return review;
+};
+
+export const ReviewService = {
+  createReview,
+};

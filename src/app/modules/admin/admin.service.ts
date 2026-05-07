@@ -1,75 +1,95 @@
 import { User } from '@prisma/client';
+import httpStatus from 'http-status';
+import AppError from '../../utils/AppError';
 import prisma from '../../utils/prisma';
 
 export type TSystemStats = {
-  totalUsers: number;
-  totalPosts: number;
-  successfulTransactions: number;
+    totalUsers: number;
+    totalPosts: number;
+    successfulTransactions: number;
 };
 
 export type TPaginatedUsers = {
-  meta: {
-    totalCount: number;
-    currentPage: number;
-    limit: number;
-    totalPages: number;
-  };
-  data: User[];
+    meta: {
+        totalCount: number;
+        currentPage: number;
+        limit: number;
+        totalPages: number;
+    };
+    data: User[];
 };
 
 const getSystemStats = async (): Promise<TSystemStats> => {
-  const [totalUsers, totalPosts, successfulTransactions] =
-    await prisma.$transaction([
-      prisma.user.count(),
-      prisma.post.count(),
-      prisma.transactionRequest.count({
-        where: { status: 'COMPLETED' },
-      }),
-    ]);
+    const [totalUsers, totalPosts, successfulTransactions] =
+        await prisma.$transaction([
+            prisma.user.count(),
+            prisma.post.count(),
+            prisma.transactionRequest.count({
+                where: { status: 'COMPLETED' },
+            }),
+        ]);
 
-  return {
-    totalUsers,
-    totalPosts,
-    successfulTransactions,
-  };
+    return {
+        totalUsers,
+        totalPosts,
+        successfulTransactions,
+    };
 };
 
 const getAllUsers = async (
-  page: number = 1,
-  limit: number = 10,
+    page: number = 1,
+    limit: number = 10,
 ): Promise<TPaginatedUsers> => {
-  const skip = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
-  const totalCount = await prisma.user.count();
+    const totalCount = await prisma.user.count();
 
-  const users = await prisma.user.findMany({
-    orderBy: { createdAt: 'desc' },
-    skip,
-    take: limit,
-  });
+    const users = await prisma.user.findMany({
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+    });
 
-  return {
-    meta: {
-      totalCount,
-      currentPage: page,
-      limit,
-      totalPages: Math.ceil(totalCount / limit),
-    },
-    data: users,
-  };
+    return {
+        meta: {
+            totalCount,
+            currentPage: page,
+            limit,
+            totalPages: Math.ceil(totalCount / limit),
+        },
+        data: users,
+    };
 };
 
 const verifyNGO = async (userId: string): Promise<User> => {
-  const user = await prisma.user.update({
-    where: { id: userId },
-    data: { isVerified: true },
-  });
+    const user = await prisma.user.update({
+        where: { id: userId },
+        data: { isVerified: true },
+    });
 
-  return user;
+    return user;
+};
+
+const toggleBan = async (userId: string): Promise<User> => {
+    const targetUser = await prisma.user.findUnique({
+        where: { id: userId },
+    });
+
+    if (!targetUser) {
+        throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    const user = await prisma.user.update({
+        where: { id: userId },
+        data: { isBanned: !targetUser.isBanned },
+    });
+
+    return user;
 };
 
 export const AdminService = {
-  getSystemStats,
-  getAllUsers,
-  verifyNGO,
+    getSystemStats,
+    getAllUsers,
+    verifyNGO,
+    toggleBan,
 };

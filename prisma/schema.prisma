@@ -41,11 +41,15 @@ model User {
   latitude     Float
   longitude    Float
   isVerified   Boolean  @default(false)
+  isBanned     Boolean  @default(false)
+  impactScore  Float    @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   posts               Post[]
   transactionRequests TransactionRequest[]
+  reviewsGiven        Review[] @relation("Reviewer")
+  reviewsReceived     Review[] @relation("Reviewee")
 
   @@map("users")
 }
@@ -81,7 +85,24 @@ model TransactionRequest {
   message   String?
   createdAt DateTime          @default(now())
 
+  reviews Review[]
+
   @@map("transaction_requests")
+}
+
+model Review {
+  id            String           @id @default(uuid())
+  reviewerId    String
+  reviewer      User             @relation("Reviewer", fields: [reviewerId], references: [id])
+  revieweeId    String
+  reviewee      User             @relation("Reviewee", fields: [revieweeId], references: [id])
+  transactionId String
+  transaction   TransactionRequest @relation(fields: [transactionId], references: [id])
+  rating        Int
+  comment       String?
+  createdAt     DateTime         @default(now())
+
+  @@map("reviews")
 }
 
 model AiLog {

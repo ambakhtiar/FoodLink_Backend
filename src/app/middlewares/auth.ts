@@ -8,64 +8,64 @@ import catchAsync from '../utils/catchAsync';
 import prisma from '../utils/prisma';
 
 const auth = (...requiredRoles: UserRole[]) => {
-  return catchAsync(
-    async (req: Request, _res: Response, next: NextFunction) => {
-      const token = req.headers.authorization;
+    return catchAsync(
+        async (req: Request, _res: Response, next: NextFunction) => {
+            const token = req.headers.authorization;
 
-      // Check if token exists
-      if (!token) {
-        throw new AppError(httpStatus.UNAUTHORIZED, 'You are not authorized');
-      }
+            // Check if token exists
+            if (!token) {
+                throw new AppError(httpStatus.UNAUTHORIZED, 'You are not authorized');
+            }
 
-      // Extract Bearer token
-      const accessToken = token.split(' ')[1];
+            // Extract Bearer token
+            const accessToken = token.split(' ')[1];
 
-      if (!accessToken) {
-        throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid token format');
-      }
+            if (!accessToken) {
+                throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid token format');
+            }
 
-      // Verify token
-      let decoded;
-      try {
-        decoded = jwt.verify(
-          accessToken,
-          config.jwt_access_secret as string,
-        ) as JwtPayload;
-      } catch (_error) {
-        throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid or expired token');
-      }
+            // Verify token
+            let decoded;
+            try {
+                decoded = jwt.verify(
+                    accessToken,
+                    config.jwt_access_secret as string,
+                ) as JwtPayload;
+            } catch (_error) {
+                throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid or expired token');
+            }
 
-      const { userId, role } = decoded;
+            const { userId, role } = decoded;
 
-      // Check if user still exists
-      const user = await prisma.user.findUnique({
-        where: {
-          id: userId,
+            // Check if user still exists
+            const user = await prisma.user.findUnique({
+                where: {
+                    id: userId,
+                },
+            });
+
+            if (!user) {
+                throw new AppError(httpStatus.NOT_FOUND, 'User does not exist');
+            }
+
+            // Check if user is banned
+            if (user.isBanned) {
+                throw new AppError(httpStatus.FORBIDDEN, 'User is banned');
+            }
+
+            // Role check
+            if (requiredRoles.length && !requiredRoles.includes(role)) {
+                throw new AppError(
+                    httpStatus.FORBIDDEN,
+                    'You have no access to this resource',
+                );
+            }
+
+            // Attach user to request
+            req.user = decoded as JwtPayload & { userId: string; role: UserRole };
+            next();
         },
-      });
-
-      if (!user) {
-        throw new AppError(httpStatus.NOT_FOUND, 'User does not exist');
-      }
-
-      // Check if user is verified (optional but good practice)
-      // if (!user.isVerified) {
-      //   throw new AppError(httpStatus.FORBIDDEN, 'User is not verified');
-      // }
-
-      // Role check
-      if (requiredRoles.length && !requiredRoles.includes(role)) {
-        throw new AppError(
-          httpStatus.FORBIDDEN,
-          'You have no access to this resource',
-        );
-      }
-
-      // Attach user to request
-      req.user = decoded as JwtPayload & { userId: string; role: UserRole };
-      next();
-    },
-  );
+    );
 };
 
 export default auth;

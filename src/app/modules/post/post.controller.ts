@@ -60,7 +60,65 @@ const nearbyPostsHandler = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getMyPostsHandler = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.userId;
+  const page = parseInt(req.query['page'] as string) || 1;
+  const limit = parseInt(req.query['limit'] as string) || 10;
+
+  const result = await PostService.getMyPosts(userId, page, limit);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'My posts fetched successfully',
+    data: result.data,
+    meta: result.meta,
+  });
+});
+
+const getPostByIdHandler = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params as { id: string };
+  const result = await PostService.getPostById(id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Post details fetched successfully',
+    data: result,
+  });
+});
+
+const updatePostHandler = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params as { id: string };
+  const userId = req.user.userId;
+  const result = await PostService.updatePost(id, userId, req.body);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Post updated successfully',
+    data: result,
+  });
+});
+
+const deletePostHandler = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params as { id: string };
+  const userId = req.user.userId;
+  await PostService.deletePost(id, userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Post deleted successfully',
+    data: null,
+  });
+});
+
 export const PostController = {
   createPostHandler,
   nearbyPostsHandler,
+  getMyPostsHandler,
+  getPostByIdHandler,
+  updatePostHandler,
+  deletePostHandler,
 };

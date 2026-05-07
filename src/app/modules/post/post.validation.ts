@@ -47,6 +47,19 @@ const createPostSchema = z.object({
   }),
 });
 
+const updatePostSchema = z.object({
+  body: z.object({
+    title: z.string().optional(),
+    description: z.string().optional(),
+    quantity: z.preprocess(
+      (val) => (typeof val === 'string' ? Number(val) : val),
+      z.number().int().positive().optional(),
+    ),
+    status: z.enum(['AVAILABLE', 'PENDING', 'COMPLETED', 'EXPIRED']).optional(),
+  }),
+});
+
 export const PostValidation = {
   createPostSchema,
+  updatePostSchema,
 };

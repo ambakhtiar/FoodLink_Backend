@@ -25,7 +25,7 @@ const consoleFormat = printf<ILogInfo>((info: ILogInfo) => {
     return `${ts} [${info.level}]: ${safeMessage}${stackSuffix}`;
 });
 
-const dailyRotateFileOptions: DailyRotateFile.DailyRotateFileTransportOptions = {
+const dailyRotateFileOptions = {
     dirname: logDir,
     datePattern: 'YYYY-MM-DD',
     zippedArchive: true,

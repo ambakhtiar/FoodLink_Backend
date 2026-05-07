@@ -42,8 +42,21 @@ const verifyNGO = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const toggleBan = catchAsync(async (req: Request, res: Response) => {
+    const userId = req.params['userId'] as string;
+    const result = await AdminService.toggleBan(userId);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: `User ${result.isBanned ? 'banned' : 'unbanned'} successfully`,
+        data: result,
+    });
+});
+
 export const AdminController = {
     getSystemStats,
     getAllUsers,
     verifyNGO,
+    toggleBan,
 };
