@@ -1,4 +1,10 @@
-import { PostStatus, PostType, TransactionRequest, TransactionStatus, UserRole } from '@prisma/client';
+import {
+  PostStatus,
+  PostType,
+  TransactionRequest,
+  TransactionStatus,
+  UserRole,
+} from '@prisma/client';
 import httpStatus from 'http-status';
 import AppError from '../../utils/AppError';
 import prisma from '../../utils/prisma';
@@ -17,7 +23,10 @@ const createTransactionRequest = async (
   }
 
   if (post.status !== PostStatus.AVAILABLE) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Post is not available for request');
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'Post is not available for request',
+    );
   }
 
   // Validate Intent:
