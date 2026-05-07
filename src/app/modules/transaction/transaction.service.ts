@@ -31,7 +31,7 @@ const createTransactionRequest = async (
 
     // Validate Intent:
     // DONATION post -> only RECEIVER can request
-    // REQUEST post -> only DONOR can fulfill
+    // REQUEST post -> only USER can fulfill
     if (post.type === PostType.DONATION && userRole !== UserRole.RECEIVER) {
         throw new AppError(
             httpStatus.FORBIDDEN,
@@ -39,10 +39,10 @@ const createTransactionRequest = async (
         );
     }
 
-    if (post.type === PostType.REQUEST && userRole !== UserRole.DONOR) {
+    if (post.type === PostType.REQUEST && userRole !== UserRole.USER) {
         throw new AppError(
             httpStatus.FORBIDDEN,
-            'Only Donors can fulfill a request post',
+            'Only Users can fulfill a request post',
         );
     }
 

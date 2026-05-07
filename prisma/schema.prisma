@@ -7,6 +7,7 @@ datasource db {
 }
 
 enum UserRole {
+  USER
   DONOR
   RECEIVER
   ADMIN
@@ -37,12 +38,14 @@ model User {
   email        String   @unique
   passwordHash String
   phone        String
-  role         UserRole @default(DONOR)
+  role         UserRole @default(USER)
   latitude     Float
   longitude    Float
   isVerified   Boolean  @default(false)
   isBanned     Boolean  @default(false)
   impactScore  Float    @default(0)
+  otp          String?
+  otpExpiry    DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

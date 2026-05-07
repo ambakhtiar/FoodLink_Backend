@@ -8,10 +8,10 @@ import { ReviewValidation } from './review.validation';
 const router = Router();
 
 router.post(
-  '/create',
-  auth(UserRole.DONOR, UserRole.RECEIVER),
-  validateRequest(ReviewValidation.createReviewSchema),
-  ReviewController.handleCreateReview,
+    '/create',
+    auth(UserRole.USER, UserRole.RECEIVER),
+    validateRequest(ReviewValidation.createReviewSchema),
+    ReviewController.handleCreateReview,
 );
 
 export const ReviewRoutes = router;
