@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import httpStatus from 'http-status';
+import { uploadImageToCloudinary } from '../../utils/cloudinary';
 import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import { PostService } from './post.service';
@@ -7,9 +8,15 @@ import { PostService } from './post.service';
 const createPostHandler = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.userId;
 
+  let imageUrl: string | undefined;
+  if (req.file) {
+    imageUrl = await uploadImageToCloudinary(req.file.buffer);
+  }
+
   const result = await PostService.createPost({
     ...req.body,
     authorId: userId,
+    imageUrl: imageUrl || req.body.imageUrl,
   });
 
   sendResponse(res, {

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { AuthRoutes } from '../modules/auth/auth.route';
 import { PostRoutes } from '../modules/post/post.route';
+import { TransactionRoutes } from '../modules/transaction/transaction.route';
 
 type TModuleRoute = {
   path: string;
@@ -17,6 +18,10 @@ const moduleRoutes: TModuleRoute[] = [
   {
     path: '/post',
     route: PostRoutes,
+  },
+  {
+    path: '/transaction',
+    route: TransactionRoutes,
   },
 ];
 

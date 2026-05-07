@@ -1,3 +1,6 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import httpStatus from 'http-status';
+import AppError from '../../utils/AppError';
 import prisma from '../../utils/prisma';
 
 export type TGeneratedFoodDetails = {
@@ -9,23 +12,85 @@ export type TGeneratedFoodDetails = {
 const generateFoodDetails = async (
   imageUrl: string,
 ): Promise<TGeneratedFoodDetails> => {
-  // Mocked AI vision call — replace with actual Gemini/OpenAI fetch when ready
-  const mockPrompt = `Analyze this food image and return JSON with title, description, and estimatedShelfLife (ISO 8601). Image URL: ${imageUrl}`;
+  const apiKey = process.env['GEMINI_API_KEY'];
+  if (!apiKey) {
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      'Gemini API key not configured',
+    );
+  }
 
-  const mockResponse = {
-    title: 'Fresh Vegetable Salad',
-    description:
-      'A healthy mix of fresh vegetables including lettuce, tomatoes, cucumbers, and carrots.',
-    estimatedShelfLife: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
-  };
+  try {
+    const imageResp = await fetch(imageUrl);
+    if (!imageResp.ok) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        'Failed to fetch image from URL',
+      );
+    }
 
-  await logAiAction(
-    'GENERATE_FOOD_DETAILS',
-    mockPrompt,
-    JSON.stringify(mockResponse),
-  );
+    const imageBuffer = await imageResp.arrayBuffer();
+    const base64 = Buffer.from(imageBuffer).toString('base64');
+    const mimeType = imageResp.headers.get('content-type') || 'image/jpeg';
 
-  return mockResponse;
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    const prompt =
+      'Analyze this food image and return ONLY a JSON object with exactly these keys: "title" (string, max 5 words), "description" (string, 1-2 sentences), "estimatedShelfLife" (ISO 8601 date string). Do not include markdown, code blocks, or any extra text.';
+
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          data: base64,
+          mimeType,
+        },
+      },
+    ]);
+
+    const response = await result.response;
+    const text = response.text();
+
+    let jsonText = text.trim();
+    if (jsonText.startsWith('```json')) {
+      jsonText = jsonText.slice(7);
+    } else if (jsonText.startsWith('```')) {
+      jsonText = jsonText.slice(3);
+    }
+    if (jsonText.endsWith('```')) {
+      jsonText = jsonText.slice(0, -3);
+    }
+    jsonText = jsonText.trim();
+
+    const parsed = JSON.parse(jsonText) as {
+      title: string;
+      description: string;
+      estimatedShelfLife: string;
+    };
+
+    const estimatedShelfLife = new Date(parsed.estimatedShelfLife);
+    if (isNaN(estimatedShelfLife.getTime())) {
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Invalid date returned from AI',
+      );
+    }
+
+    await logAiAction('GENERATE_FOOD_DETAILS', prompt, text);
+
+    return {
+      title: parsed.title,
+      description: parsed.description,
+      estimatedShelfLife,
+    };
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      'AI generation failed',
+    );
+  }
 };
 
 const logAiAction = async (
