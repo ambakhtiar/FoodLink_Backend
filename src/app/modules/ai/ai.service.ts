@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import httpStatus from 'http-status';
 import AppError from '../../utils/AppError';
+import config from '../../config';
 import prisma from '../../utils/prisma';
 
 export type TGeneratedFoodDetails = {
@@ -12,7 +13,7 @@ export type TGeneratedFoodDetails = {
 const generateFoodDetails = async (
   imageUrl: string,
 ): Promise<TGeneratedFoodDetails> => {
-  const apiKey = process.env['GEMINI_API_KEY'];
+  const apiKey = config.gemini_api_key;
   if (!apiKey) {
     throw new AppError(
       httpStatus.INTERNAL_SERVER_ERROR,

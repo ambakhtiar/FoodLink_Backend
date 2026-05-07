@@ -1,8 +1,12 @@
 import { Server } from 'http';
 import app from './app';
 import prisma from './app/utils/prisma';
+import setupCronJobs from './app/utils/cronJobs';
 
 async function main() {
+  // Initialize Cron Jobs
+  setupCronJobs();
+
   const server: Server = app.listen(5000, () => {
     console.log(`Server is running on port 5000`);
   });

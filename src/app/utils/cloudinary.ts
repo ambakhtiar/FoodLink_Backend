@@ -1,11 +1,12 @@
 import { v2 as cloudinary } from 'cloudinary';
 import httpStatus from 'http-status';
+import config from '../config';
 import AppError from './AppError';
 
 cloudinary.config({
-  cloud_name: process.env['CLOUDINARY_CLOUD_NAME'],
-  api_key: process.env['CLOUDINARY_API_KEY'],
-  api_secret: process.env['CLOUDINARY_API_SECRET'],
+  cloud_name: config.cloudinary_cloud_name as string,
+  api_key: config.cloudinary_api_key as string,
+  api_secret: config.cloudinary_api_secret as string,
 });
 
 const uploadImageToCloudinary = (fileBuffer: Buffer): Promise<string> => {

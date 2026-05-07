@@ -68,7 +68,8 @@ const loginUser = async (payload: {
   };
 
   const accessToken = jwt.sign(jwtPayload, config.jwt_access_secret as string, {
-    expiresIn: config.jwt_access_expires_in as string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expiresIn: config.jwt_access_expires_in as any,
   });
 
   return {

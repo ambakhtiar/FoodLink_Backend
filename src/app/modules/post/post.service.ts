@@ -66,33 +66,57 @@ const createPost = async (payload: TCreatePostInput): Promise<Post> => {
 const fetchAvailablePostsWithinRadius = async (
   latitude: number,
   longitude: number,
+  page: number = 1,
+  limit: number = 10,
   type?: PostType,
   radiusInKm: number = 5,
-): Promise<Post[]> => {
-  // Haversine formula in raw SQL
-  // 6371 is the earth's radius in kilometers
-  const typeFilter = type
-    ? Prisma.sql`AND type = ${type}::"PostType"`
-    : Prisma.empty;
+) => {
+  const skip = (page - 1) * limit;
 
-  const posts = await prisma.$queryRaw<Post[]>`
-    SELECT * FROM (
-      SELECT *, (
-        6371 * acos(
-          cos(radians(${latitude})) * cos(radians(latitude)) *
-          cos(radians(longitude) - radians(${longitude})) +
-          sin(radians(${latitude})) * sin(radians(latitude))
-        )
-      ) AS distance
-      FROM posts
-      WHERE status = 'AVAILABLE'
-      ${typeFilter}
-    ) AS subquery
-    WHERE distance < ${radiusInKm}
-    ORDER BY distance ASC;
-  `;
+  // Approximate degree offsets for the given radius
+  // 1 degree of latitude is ~111.32 km
+  const dLat = radiusInKm / 111.32;
+  const dLng =
+    radiusInKm / (111.32 * Math.cos(latitude * (Math.PI / 180)));
 
-  return posts;
+  const where: Prisma.PostWhereInput = {
+    status: 'AVAILABLE',
+    latitude: {
+      gte: latitude - dLat,
+      lte: latitude + dLat,
+    },
+    longitude: {
+      gte: longitude - dLng,
+      lte: longitude + dLng,
+    },
+  };
+
+  if (type) {
+    where.type = type;
+  }
+
+  // Query for total count using Prisma
+  const totalCount = await prisma.post.count({ where });
+
+  // Query for paginated data using Prisma
+  const posts = await prisma.post.findMany({
+    where,
+    orderBy: {
+      createdAt: 'desc',
+    },
+    skip,
+    take: limit,
+  });
+
+  return {
+    meta: {
+      totalCount,
+      currentPage: page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit),
+    },
+    data: posts,
+  };
 };
 
 export const PostService = {

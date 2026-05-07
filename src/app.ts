@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express, { Application, Request, Response } from 'express';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
+import { globalRateLimiter } from './app/middlewares/rateLimiter';
 import router from './app/routes';
 
 const app: Application = express();
@@ -8,6 +9,9 @@ const app: Application = express();
 // Parsers
 app.use(express.json());
 app.use(cors());
+
+// Global Rate Limiter
+app.use(globalRateLimiter);
 
 // Application routes
 app.use('/api/v1', router);

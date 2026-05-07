@@ -71,7 +71,7 @@ const createTransactionRequest = async (
 const respondToTransaction = async (
   userId: string,
   transactionId: string,
-  status: TransactionStatus.APPROVED | TransactionStatus.REJECTED,
+  status: 'APPROVED' | 'REJECTED',
 ): Promise<TransactionRequest> => {
   const transactionRequest = await prisma.transactionRequest.findUnique({
     where: { id: transactionId },

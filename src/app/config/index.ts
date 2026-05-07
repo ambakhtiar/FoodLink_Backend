@@ -10,4 +10,10 @@ export default {
   bcrypt_salt_rounds: process.env['BCRYPT_SALT_ROUNDS'] || 12,
   jwt_access_secret: process.env['JWT_ACCESS_SECRET'] || 'secret',
   jwt_access_expires_in: process.env['JWT_ACCESS_EXPIRES_IN'] || '1d',
+  cloudinary_cloud_name: process.env['CLOUDINARY_CLOUD_NAME'],
+  cloudinary_api_key: process.env['CLOUDINARY_API_KEY'],
+  cloudinary_api_secret: process.env['CLOUDINARY_API_SECRET'],
+  cloudinary_upload_folder:
+    process.env['CLOUDINARY_UPLOAD_FOLDER'] || 'FoodLink',
+  gemini_api_key: process.env['GEMINI_API_KEY'],
 };

@@ -3,8 +3,11 @@
 .agents
 .brainsync/
 .cursor
+.vscode/
 docs
 node_modules/
+.mcp.json
+.mcp.json.bak
 AGENT.md
 CLAUDE.md
 .prettierrc

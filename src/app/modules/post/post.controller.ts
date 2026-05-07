@@ -30,6 +30,9 @@ const createPostHandler = catchAsync(async (req: Request, res: Response) => {
 const nearbyPostsHandler = catchAsync(async (req: Request, res: Response) => {
   const lat = parseFloat(req.query['lat'] as string);
   const lng = parseFloat(req.query['lng'] as string);
+  const page = parseInt(req.query['page'] as string) || 1;
+  const limit = parseInt(req.query['limit'] as string) || 10;
+  const type = req.query['type'] as any; // PostType
 
   if (isNaN(lat) || isNaN(lng)) {
     return sendResponse(res, {
@@ -40,13 +43,20 @@ const nearbyPostsHandler = catchAsync(async (req: Request, res: Response) => {
     });
   }
 
-  const result = await PostService.fetchAvailablePostsWithinRadius(lat, lng);
+  const result = await PostService.fetchAvailablePostsWithinRadius(
+    lat,
+    lng,
+    page,
+    limit,
+    type,
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: 'Nearby posts fetched successfully',
-    data: result,
+    data: result.data,
+    meta: result.meta,
   });
 });
 
