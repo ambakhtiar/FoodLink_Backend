@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  DONOR
+  RECEIVER
+  ADMIN
+}
+
+enum PostType {
+  DONATION
+  REQUEST
+}
+
+enum PostStatus {
+  AVAILABLE
+  PENDING
+  COMPLETED
+  EXPIRED
+}
+
+enum TransactionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  phone        String
+  role         UserRole @default(DONOR)
+  latitude     Float
+  longitude    Float
+  isVerified   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  posts               Post[]
+  transactionRequests TransactionRequest[]
+
+  @@map("users")
+}
+
+model Post {
+  id                 String     @id @default(uuid())
+  authorId           String
+  author             User       @relation(fields: [authorId], references: [id])
+  type               PostType
+  title              String
+  description        String
+  imageUrl           String?
+  quantity           Int
+  estimatedShelfLife DateTime?
+  latitude           Float
+  longitude          Float
+  status             PostStatus @default(AVAILABLE)
+  createdAt          DateTime   @default(now())
+
+  transactionRequests TransactionRequest[]
+
+  @@map("posts")
+}
+
+model TransactionRequest {
+  id        String            @id @default(uuid())
+  postId    String
+  post      Post              @relation(fields: [postId], references: [id])
+  actorId   String
+  actor     User              @relation(fields: [actorId], references: [id])
+  quantity  String
+  status    TransactionStatus @default(PENDING)
+  message   String?
+  createdAt DateTime          @default(now())
+
+  @@map("transaction_requests")
+}
+
+model AiLog {
+  id         String   @id @default(uuid())
+  actionType String
+  prompt     String
+  response   String
+  createdAt  DateTime @default(now())
+
+  @@map("ai_logs")
+}
