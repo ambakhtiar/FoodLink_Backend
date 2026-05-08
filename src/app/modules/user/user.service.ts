@@ -1,32 +1,33 @@
-import { User } from '@prisma/client';
+import { UserProfile } from '@prisma/client';
 import httpStatus from 'http-status';
 import AppError from '../../utils/AppError';
 import prisma from '../../utils/prisma';
 
 const updateProfile = async (
-  userId: string,
-  payload: Partial<User>,
-): Promise<User> => {
-  const isUserExists = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-  });
+    userId: string,
+    payload: Partial<UserProfile>,
+): Promise<UserProfile> => {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { userProfile: true },
+    });
 
-  if (!isUserExists) {
-    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
-  }
+    if (!user) {
+        throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    }
 
-  const updatedUser = await prisma.user.update({
-    where: {
-      id: userId,
-    },
-    data: payload,
-  });
+    if (!user.userProfile) {
+        throw new AppError(httpStatus.NOT_FOUND, 'User profile not found');
+    }
 
-  return updatedUser;
+    const updatedProfile = await prisma.userProfile.update({
+        where: { userId },
+        data: payload,
+    });
+
+    return updatedProfile;
 };
 
 export const UserService = {
-  updateProfile,
+    updateProfile,
 };

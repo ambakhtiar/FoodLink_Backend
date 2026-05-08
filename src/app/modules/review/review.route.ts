@@ -9,7 +9,7 @@ const router = Router();
 
 router.post(
     '/create',
-    auth(UserRole.USER, UserRole.RECEIVER),
+    auth(UserRole.USER, UserRole.ORGANIZATION),
     validateRequest(ReviewValidation.createReviewSchema),
     ReviewController.handleCreateReview,
 );

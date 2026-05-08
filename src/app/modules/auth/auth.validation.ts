@@ -31,14 +31,22 @@ const registerValidationSchema = z.object({
                     ? 'Phone number is required'
                     : 'Invalid phone number',
         }),
-        role: z.nativeEnum(UserRole, {
-            error: (issue) =>
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (issue as any).code === 'invalid_type' &&
-                    issue['received'] === 'undefined'
-                    ? 'Role is required'
-                    : 'Invalid role',
-        }),
+        role: z
+            .nativeEnum(UserRole, {
+                error: (issue) =>
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (issue as any).code === 'invalid_type' &&
+                        issue['received'] === 'undefined'
+                        ? 'Role is required'
+                        : 'Invalid role',
+            })
+            .refine(
+                (val) => val !== UserRole.ADMIN && val !== UserRole.SUPER_ADMIN,
+                {
+                    message:
+                        'Cannot register as ADMIN or SUPER_ADMIN via public endpoint',
+                },
+            ),
         latitude: z.number({
             error: (issue) =>
                 issue.code === 'invalid_type' && issue['received'] === 'undefined'
@@ -163,9 +171,29 @@ const googleLoginSchema = z.object({
                     ? 'Google token is required'
                     : 'Invalid Google token',
         }),
-        phone: z.string().optional(),
-        latitude: z.number().optional(),
-        longitude: z.number().optional(),
+    }),
+});
+
+const completeProfileSchema = z.object({
+    body: z.object({
+        phone: z.string({
+            error: (issue) =>
+                issue.code === 'invalid_type' && issue['received'] === 'undefined'
+                    ? 'Phone number is required'
+                    : 'Invalid phone number',
+        }),
+        latitude: z.number({
+            error: (issue) =>
+                issue.code === 'invalid_type' && issue['received'] === 'undefined'
+                    ? 'Latitude is required'
+                    : 'Invalid latitude',
+        }),
+        longitude: z.number({
+            error: (issue) =>
+                issue.code === 'invalid_type' && issue['received'] === 'undefined'
+                    ? 'Longitude is required'
+                    : 'Invalid longitude',
+        }),
     }),
 });
 
@@ -177,4 +205,5 @@ export const AuthValidation = {
     verifyOtpSchema,
     resetPasswordSchema,
     googleLoginSchema,
+    completeProfileSchema,
 };

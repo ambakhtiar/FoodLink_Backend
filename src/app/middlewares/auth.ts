@@ -1,4 +1,4 @@
-import { UserRole } from '@prisma/client';
+import { AccountStatus, UserRole } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
 import jwt, { JwtPayload } from 'jsonwebtoken';
@@ -49,7 +49,7 @@ const auth = (...requiredRoles: UserRole[]) => {
             }
 
             // Check if user is banned
-            if (user.isBanned) {
+            if (user.status === AccountStatus.BANNED) {
                 throw new AppError(httpStatus.FORBIDDEN, 'User is banned');
             }
 

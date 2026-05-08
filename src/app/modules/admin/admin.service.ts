@@ -1,4 +1,4 @@
-import { User } from '@prisma/client';
+import { AccountStatus, User } from '@prisma/client';
 import httpStatus from 'http-status';
 import AppError from '../../utils/AppError';
 import prisma from '../../utils/prisma';
@@ -64,7 +64,7 @@ const getAllUsers = async (
 const verifyNGO = async (userId: string): Promise<User> => {
     const user = await prisma.user.update({
         where: { id: userId },
-        data: { isVerified: true },
+        data: { status: AccountStatus.ACTIVE },
     });
 
     return user;
@@ -79,9 +79,14 @@ const toggleBan = async (userId: string): Promise<User> => {
         throw new AppError(httpStatus.NOT_FOUND, 'User not found');
     }
 
+    const newStatus =
+        targetUser.status === AccountStatus.BANNED
+            ? AccountStatus.ACTIVE
+            : AccountStatus.BANNED;
+
     const user = await prisma.user.update({
         where: { id: userId },
-        data: { isBanned: !targetUser.isBanned },
+        data: { status: newStatus },
     });
 
     return user;

@@ -5,10 +5,7 @@ import sendResponse from '../../utils/sendResponse';
 import { AuthService } from './auth.service';
 
 const registerUser = catchAsync(async (req: Request, res: Response) => {
-    const result = await AuthService.registerUser({
-        ...req.body,
-        passwordHash: req.body.password,
-    });
+    const result = await AuthService.registerUser(req.body);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash, ...userWithoutPassword } = result;
@@ -22,10 +19,7 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const loginUser = catchAsync(async (req: Request, res: Response) => {
-    const result = await AuthService.loginUser({
-        email: req.body.email,
-        passwordHash: req.body.password,
-    });
+    const result = await AuthService.loginUser(req.body);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -111,6 +105,18 @@ const googleLogin = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const completeProfile = catchAsync(async (req: Request, res: Response) => {
+    const userId = (req as any).user.userId as string;
+    const result = await AuthService.completeProfile(userId, req.body);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Profile completed successfully',
+        data: result,
+    });
+});
+
 export const AuthController = {
     registerUser,
     loginUser,
@@ -120,4 +126,5 @@ export const AuthController = {
     verifyOtp,
     resetPassword,
     googleLogin,
+    completeProfile,
 };

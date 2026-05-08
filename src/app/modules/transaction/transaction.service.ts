@@ -1,17 +1,10 @@
-import {
-    PostStatus,
-    PostType,
-    TransactionRequest,
-    TransactionStatus,
-    UserRole,
-} from '@prisma/client';
+import { PostStatus, TransactionRequest, TransactionStatus } from '@prisma/client';
 import httpStatus from 'http-status';
 import AppError from '../../utils/AppError';
 import prisma from '../../utils/prisma';
 
 const createTransactionRequest = async (
     userId: string,
-    userRole: UserRole,
     payload: { postId: string; requestedQuantity: string },
 ): Promise<TransactionRequest> => {
     const post = await prisma.post.findUnique({
@@ -29,20 +22,11 @@ const createTransactionRequest = async (
         );
     }
 
-    // Validate Intent:
-    // DONATION post -> only RECEIVER can request
-    // REQUEST post -> only USER can fulfill
-    if (post.type === PostType.DONATION && userRole !== UserRole.RECEIVER) {
+    // Prevent users from transacting on their own posts
+    if (post.authorId === userId) {
         throw new AppError(
             httpStatus.FORBIDDEN,
-            'Only Receivers can request a donation post',
-        );
-    }
-
-    if (post.type === PostType.REQUEST && userRole !== UserRole.USER) {
-        throw new AppError(
-            httpStatus.FORBIDDEN,
-            'Only Users can fulfill a request post',
+            'You cannot transact on your own post',
         );
     }
 

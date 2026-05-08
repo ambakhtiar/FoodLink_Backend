@@ -1,11 +1,12 @@
-import { UserRole } from '@prisma/client';
+import { AccountStatus, UserRole } from '@prisma/client';
 
 export type TLoginUser = {
-  email: string;
-  passwordHash: string;
+    email: string;
+    password: string;
 };
 
 export type TJWTPayload = {
-  userId: string;
-  role: UserRole;
+    userId: string;
+    role: UserRole;
+    status: AccountStatus;
 };

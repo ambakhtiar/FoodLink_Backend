@@ -6,10 +6,9 @@ import { TransactionService } from './transaction.service';
 
 const handleCreateTransaction = catchAsync(
     async (req: Request, res: Response) => {
-        const { userId, role } = req.user;
+        const { userId } = req.user;
         const result = await TransactionService.createTransactionRequest(
             userId,
-            role,
             req.body,
         );
 

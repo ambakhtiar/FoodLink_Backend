@@ -1,4 +1,4 @@
-import { User, UserRole } from '@prisma/client';
+import { AccountStatus, User, UserRole } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
 import httpStatus from 'http-status';
@@ -12,6 +12,7 @@ const generateAccessToken = (user: User): string => {
     const jwtPayload: TJWTPayload = {
         userId: user.id,
         role: user.role,
+        status: user.status,
     };
 
     return jwt.sign(
@@ -24,29 +25,70 @@ const generateAccessToken = (user: User): string => {
     );
 };
 
-const registerUser = async (payload: User): Promise<User> => {
-    // Check if user already exists
+const registerUser = async (payload: {
+    email: string;
+    password: string;
+    phone: string;
+    role?: UserRole;
+    name: string;
+    latitude: number;
+    longitude: number;
+}): Promise<User> => {
     const isUserExists = await prisma.user.findUnique({
-        where: {
-            email: payload.email,
-        },
+        where: { email: payload.email },
     });
 
     if (isUserExists) {
         throw new AppError(httpStatus.BAD_REQUEST, 'User already exists');
     }
 
-    // Hash password
+    const role = payload.role ?? UserRole.USER;
+
+    if (role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN) {
+        throw new AppError(
+            httpStatus.FORBIDDEN,
+            'Cannot register as admin via public endpoint',
+        );
+    }
+
     const hashedPassword = await bcrypt.hash(
-        payload.passwordHash,
+        payload.password,
         Number(config.bcrypt_salt_rounds),
     );
 
-    // Create user
+    const status =
+        role === UserRole.ORGANIZATION
+            ? AccountStatus.PENDING
+            : AccountStatus.ACTIVE;
+
     const newUser = await prisma.user.create({
         data: {
-            ...payload,
+            email: payload.email,
             passwordHash: hashedPassword,
+            phone: payload.phone,
+            role,
+            status,
+            authProvider: 'local',
+            userProfile:
+                role === UserRole.USER
+                    ? {
+                        create: {
+                            name: payload.name,
+                            latitude: payload.latitude,
+                            longitude: payload.longitude,
+                        },
+                    }
+                    : undefined,
+            organizationProfile:
+                role === UserRole.ORGANIZATION
+                    ? {
+                        create: {
+                            orgName: payload.name,
+                            latitude: payload.latitude,
+                            longitude: payload.longitude,
+                        },
+                    }
+                    : undefined,
         },
     });
 
@@ -55,7 +97,7 @@ const registerUser = async (payload: User): Promise<User> => {
 
 const loginUser = async (payload: {
     email: string;
-    passwordHash: string;
+    password: string;
 }): Promise<{ accessToken: string }> => {
     // Find user
     const user = await prisma.user.findUnique({
@@ -68,9 +110,16 @@ const loginUser = async (payload: {
         throw new AppError(httpStatus.NOT_FOUND, 'User not found');
     }
 
+    if (!user.passwordHash) {
+        throw new AppError(
+            httpStatus.FORBIDDEN,
+            'This account uses OAuth. Please login with Google.',
+        );
+    }
+
     // Compare password
     const isPasswordMatched = await bcrypt.compare(
-        payload.passwordHash,
+        payload.password,
         user.passwordHash,
     );
 
@@ -90,16 +139,10 @@ const getMe = async (userId: string) => {
         where: {
             id: userId,
         },
-        select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-            role: true,
-            latitude: true,
-            longitude: true,
-            createdAt: true,
-            updatedAt: true,
+        include: {
+            userProfile: true,
+            organizationProfile: true,
+            adminProfile: true,
         },
     });
 
@@ -107,7 +150,36 @@ const getMe = async (userId: string) => {
         throw new AppError(httpStatus.NOT_FOUND, 'User not found');
     }
 
-    return user;
+    // Flatten profile data for API response
+    const profile =
+        user.userProfile ??
+        user.organizationProfile ??
+        user.adminProfile;
+
+    return {
+        id: user.id,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        status: user.status,
+        profilePictureUrl: user.profilePictureUrl,
+        name:
+            user.userProfile?.name ??
+            user.organizationProfile?.orgName ??
+            user.adminProfile?.name,
+        latitude:
+            user.userProfile?.latitude ??
+            user.organizationProfile?.latitude,
+        longitude:
+            user.userProfile?.longitude ??
+            user.organizationProfile?.longitude,
+        impactScore:
+            user.userProfile?.impactScore ??
+            user.organizationProfile?.impactScore,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        profile,
+    };
 };
 
 const changePassword = async (
@@ -210,9 +282,6 @@ const resetPassword = async (
 
 const googleLogin = async (payload: {
     googleToken: string;
-    phone?: string;
-    latitude?: number;
-    longitude?: number;
 }): Promise<{ accessToken: string }> => {
     const client = new OAuth2Client(config.google_client_id);
 
@@ -227,33 +296,81 @@ const googleLogin = async (payload: {
         throw new AppError(httpStatus.BAD_REQUEST, 'Invalid Google token');
     }
 
-    const { email, name, sub } = payload_google;
+    const { email, name } = payload_google;
 
     let user = await prisma.user.findUnique({
         where: { email },
     });
 
     if (!user) {
-        const hashedPassword = await bcrypt.hash(
-            sub,
-            Number(config.bcrypt_salt_rounds),
-        );
-
         user = await prisma.user.create({
             data: {
                 email,
-                name: name || 'Google User',
-                passwordHash: hashedPassword,
-                phone: payload.phone || 'N/A',
+                passwordHash: null,
+                phone: null,
                 role: UserRole.USER,
-                latitude: payload.latitude ?? 0,
-                longitude: payload.longitude ?? 0,
+                status: AccountStatus.INCOMPLETE_PROFILE,
+                authProvider: 'google',
                 isVerified: true,
+                userProfile: {
+                    create: {
+                        name: name || 'Google User',
+                    },
+                },
             },
         });
     }
 
     const accessToken = generateAccessToken(user);
+
+    return { accessToken };
+};
+
+const completeProfile = async (
+    userId: string,
+    payload: {
+        phone: string;
+        latitude: number;
+        longitude: number;
+    },
+): Promise<{ accessToken: string }> => {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { userProfile: true },
+    });
+
+    if (!user) {
+        throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    if (user.status !== AccountStatus.INCOMPLETE_PROFILE) {
+        throw new AppError(
+            httpStatus.BAD_REQUEST,
+            'Profile is already complete',
+        );
+    }
+
+    const updatedUser = await prisma.$transaction(async (tx) => {
+        const updated = await tx.user.update({
+            where: { id: userId },
+            data: {
+                phone: payload.phone,
+                status: AccountStatus.ACTIVE,
+            },
+        });
+
+        await tx.userProfile.update({
+            where: { userId },
+            data: {
+                latitude: payload.latitude,
+                longitude: payload.longitude,
+            },
+        });
+
+        return updated;
+    });
+
+    const accessToken = generateAccessToken(updatedUser);
 
     return { accessToken };
 };
@@ -267,4 +384,5 @@ export const AuthService = {
     verifyOtp,
     resetPassword,
     googleLogin,
+    completeProfile,
 };

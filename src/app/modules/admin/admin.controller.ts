@@ -49,7 +49,7 @@ const toggleBan = catchAsync(async (req: Request, res: Response) => {
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
-        message: `User ${result.isBanned ? 'banned' : 'unbanned'} successfully`,
+        message: `User ${result.status === 'BANNED' ? 'banned' : 'unbanned'} successfully`,
         data: result,
     });
 });

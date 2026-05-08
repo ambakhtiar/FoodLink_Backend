@@ -52,4 +52,11 @@ router.post(
     AuthController.googleLogin,
 );
 
+router.patch(
+    '/complete-profile',
+    auth(),
+    validateRequest(AuthValidation.completeProfileSchema),
+    AuthController.completeProfile,
+);
+
 export const AuthRoutes = router;
