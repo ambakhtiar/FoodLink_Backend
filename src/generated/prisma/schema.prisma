@@ -1,0 +1,183 @@
+// This is your Prisma schema file
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  USER
+  ORGANIZATION
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  PENDING
+  INCOMPLETE_PROFILE
+  BANNED
+}
+
+enum PostType {
+  DONATION
+  REQUEST
+}
+
+enum PostStatus {
+  AVAILABLE
+  PENDING
+  COMPLETED
+  EXPIRED
+}
+
+enum TransactionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum PostCategory {
+  COOKED_FOOD
+  DRY_FOOD
+  CLOTHING
+  FURNITURE
+  ELECTRONICS
+  MEDICAL_SUPPLIES
+  OTHERS
+}
+
+model User {
+  id                  String        @id @default(uuid())
+  email               String        @unique
+  passwordHash        String?
+  phone               String?       @unique
+  role                UserRole      @default(USER)
+  status              AccountStatus @default(ACTIVE)
+  profilePictureUrl   String?
+  needsPasswordChange Boolean       @default(false)
+  authProvider        String?       @default("local")
+  isVerified          Boolean       @default(false)
+  otp                 String?
+  otpExpiry           DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  // One-to-One Profile Delegation
+  userProfile         UserProfile?
+  organizationProfile OrganizationProfile?
+  adminProfile        AdminProfile?
+
+  // Core Relations
+  posts               Post[]
+  transactionRequests TransactionRequest[]
+  reviewsGiven        Review[]             @relation("Reviewer")
+  reviewsReceived     Review[]             @relation("Reviewee")
+
+  @@map("users")
+}
+
+model UserProfile {
+  id          String @id @default(uuid())
+  userId      String @unique
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  latitude    Float?
+  longitude   Float?
+  impactScore Float  @default(0)
+
+  @@map("user_profiles")
+}
+
+model OrganizationProfile {
+  id                 String  @id @default(uuid())
+  userId             String  @unique
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orgName            String
+  establishedYear    Int?
+  registrationNumber String?
+  latitude           Float
+  longitude          Float
+  impactScore        Float   @default(0)
+
+  @@map("organization_profiles")
+}
+
+model AdminProfile {
+  id         String  @id @default(uuid())
+  userId     String  @unique
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  department String?
+
+  @@map("admin_profiles")
+}
+
+model Post {
+  id                 String       @id @default(uuid())
+  authorId           String
+  author             User         @relation(fields: [authorId], references: [id])
+  type               PostType
+  category           PostCategory
+  title              String
+  description        String
+  imageUrl           String?
+  quantity           Int
+  estimatedShelfLife DateTime?
+  metadata           Json?
+  latitude           Float
+  longitude          Float
+  status             PostStatus   @default(AVAILABLE)
+  createdAt          DateTime     @default(now())
+
+  transactionRequests TransactionRequest[]
+
+  @@map("posts")
+}
+
+model TransactionRequest {
+  id        String            @id @default(uuid())
+  postId    String
+  post      Post              @relation(fields: [postId], references: [id])
+  actorId   String
+  actor     User              @relation(fields: [actorId], references: [id])
+  quantity  String
+  status    TransactionStatus @default(PENDING)
+  message   String?
+  createdAt DateTime          @default(now())
+
+  reviews Review[]
+
+  @@map("transaction_requests")
+}
+
+model Review {
+  id            String             @id @default(uuid())
+  reviewerId    String
+  reviewer      User               @relation("Reviewer", fields: [reviewerId], references: [id])
+  revieweeId    String
+  reviewee      User               @relation("Reviewee", fields: [revieweeId], references: [id])
+  transactionId String
+  transaction   TransactionRequest @relation(fields: [transactionId], references: [id])
+  rating        Int
+  comment       String?
+  createdAt     DateTime           @default(now())
+
+  @@map("reviews")
+}
+
+model AiLog {
+  id         String   @id @default(uuid())
+  actionType String
+  prompt     String
+  response   String
+  createdAt  DateTime @default(now())
+
+  @@map("ai_logs")
+}

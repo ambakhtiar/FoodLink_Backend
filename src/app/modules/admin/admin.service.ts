@@ -1,4 +1,4 @@
-import { AccountStatus, User } from '@prisma/client';
+import { AccountStatus, User } from '../../../generated/prisma';
 import httpStatus from 'http-status';
 import AppError from '../../utils/AppError';
 import prisma from '../../utils/prisma';

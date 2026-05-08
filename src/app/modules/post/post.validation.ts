@@ -1,4 +1,4 @@
-import { PostCategory, PostType } from '@prisma/client';
+import { PostCategory, PostType } from '../../../generated/prisma';
 import { z } from 'zod';
 
 const createPostSchema = z.object({

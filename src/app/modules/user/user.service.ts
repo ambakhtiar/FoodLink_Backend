@@ -1,4 +1,4 @@
-import { UserProfile } from '@prisma/client';
+import { UserProfile } from '../../../generated/prisma';
 import httpStatus from 'http-status';
 import AppError from '../../utils/AppError';
 import prisma from '../../utils/prisma';

@@ -1,4 +1,4 @@
-import { PostStatus, TransactionRequest, TransactionStatus } from '@prisma/client';
+import { PostStatus, TransactionRequest, TransactionStatus } from '../../../generated/prisma';
 import httpStatus from 'http-status';
 import AppError from '../../utils/AppError';
 import prisma from '../../utils/prisma';

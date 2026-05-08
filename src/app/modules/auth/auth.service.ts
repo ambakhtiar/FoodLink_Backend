@@ -1,4 +1,4 @@
-import { AccountStatus, User, UserRole } from '@prisma/client';
+import { AccountStatus, User, UserRole } from '../../../generated/prisma';
 import bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
 import httpStatus from 'http-status';
@@ -30,7 +30,10 @@ const registerUser = async (payload: {
     password: string;
     phone: string;
     role?: UserRole;
-    name: string;
+    name?: string;
+    orgName?: string;
+    establishedYear?: number;
+    registrationNumber?: string;
     latitude: number;
     longitude: number;
 }): Promise<User> => {
@@ -69,26 +72,30 @@ const registerUser = async (payload: {
             role,
             status,
             authProvider: 'local',
-            userProfile:
-                role === UserRole.USER
-                    ? {
-                        create: {
-                            name: payload.name,
-                            latitude: payload.latitude,
-                            longitude: payload.longitude,
-                        },
-                    }
-                    : undefined,
-            organizationProfile:
-                role === UserRole.ORGANIZATION
-                    ? {
-                        create: {
-                            orgName: payload.name,
-                            latitude: payload.latitude,
-                            longitude: payload.longitude,
-                        },
-                    }
-                    : undefined,
+            ...(role === UserRole.USER && {
+                userProfile: {
+                    create: {
+                        name: payload.name!,
+                        latitude: payload.latitude,
+                        longitude: payload.longitude,
+                    },
+                },
+            }),
+            ...(role === UserRole.ORGANIZATION && {
+                organizationProfile: {
+                    create: {
+                        orgName: payload.orgName!,
+                        latitude: payload.latitude,
+                        longitude: payload.longitude,
+                        ...(payload.establishedYear !== undefined && {
+                            establishedYear: payload.establishedYear,
+                        }),
+                        ...(payload.registrationNumber !== undefined && {
+                            registrationNumber: payload.registrationNumber,
+                        }),
+                    },
+                },
+            }),
         },
     });
 
@@ -193,6 +200,13 @@ const changePassword = async (
 
     if (!user) {
         throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    if (!user.passwordHash) {
+        throw new AppError(
+            httpStatus.FORBIDDEN,
+            'This account uses OAuth. Password cannot be changed.',
+        );
     }
 
     const isPasswordMatched = await bcrypt.compare(

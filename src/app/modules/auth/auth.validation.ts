@@ -1,65 +1,108 @@
-import { UserRole } from '@prisma/client';
+import { UserRole } from '../../../generated/prisma';
 import { z } from 'zod';
 
 const registerValidationSchema = z.object({
-    body: z.object({
-        name: z.string({
-            error: (issue) =>
-                issue.code === 'invalid_type' && issue['received'] === 'undefined'
-                    ? 'Name is required'
-                    : 'Invalid name',
-        }),
-        email: z
-            .string({
+    body: z
+        .object({
+            name: z
+                .string({
+                    error: (issue) =>
+                        issue.code === 'invalid_type' && issue['received'] === 'undefined'
+                            ? 'Name is required'
+                            : 'Invalid name',
+                })
+                .optional(),
+            email: z
+                .string({
+                    error: (issue) =>
+                        issue.code === 'invalid_type' && issue['received'] === 'undefined'
+                            ? 'Email is required'
+                            : 'Invalid email',
+                })
+                .email('Invalid email format'),
+            password: z
+                .string({
+                    error: (issue) =>
+                        issue.code === 'invalid_type' && issue['received'] === 'undefined'
+                            ? 'Password is required'
+                            : 'Invalid password',
+                })
+                .min(6, 'Password must be at least 6 characters'),
+            phone: z.string({
                 error: (issue) =>
                     issue.code === 'invalid_type' && issue['received'] === 'undefined'
-                        ? 'Email is required'
-                        : 'Invalid email',
-            })
-            .email('Invalid email format'),
-        password: z
-            .string({
+                        ? 'Phone number is required'
+                        : 'Invalid phone number',
+            }),
+            role: z
+                .nativeEnum(UserRole, {
+                    error: (issue) =>
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        (issue as any).code === 'invalid_type' &&
+                            issue['received'] === 'undefined'
+                            ? 'Role is required'
+                            : 'Invalid role',
+                })
+                .refine(
+                    (val) => val !== UserRole.ADMIN && val !== UserRole.SUPER_ADMIN,
+                    {
+                        message:
+                            'Cannot register as ADMIN or SUPER_ADMIN via public endpoint',
+                    },
+                ),
+            orgName: z
+                .string({
+                    error: (issue) =>
+                        issue.code === 'invalid_type' && issue['received'] === 'undefined'
+                            ? 'Organization name is required'
+                            : 'Invalid organization name',
+                })
+                .optional(),
+            establishedYear: z
+                .number({
+                    error: (issue) =>
+                        issue.code === 'invalid_type' && issue['received'] === 'undefined'
+                            ? 'Established year is required'
+                            : 'Invalid established year',
+                })
+                .optional(),
+            registrationNumber: z
+                .string({
+                    error: (issue) =>
+                        issue.code === 'invalid_type' && issue['received'] === 'undefined'
+                            ? 'Registration number is required'
+                            : 'Invalid registration number',
+                })
+                .optional(),
+            latitude: z.number({
                 error: (issue) =>
                     issue.code === 'invalid_type' && issue['received'] === 'undefined'
-                        ? 'Password is required'
-                        : 'Invalid password',
-            })
-            .min(6, 'Password must be at least 6 characters'),
-        phone: z.string({
-            error: (issue) =>
-                issue.code === 'invalid_type' && issue['received'] === 'undefined'
-                    ? 'Phone number is required'
-                    : 'Invalid phone number',
-        }),
-        role: z
-            .nativeEnum(UserRole, {
+                        ? 'Latitude is required'
+                        : 'Invalid latitude',
+            }),
+            longitude: z.number({
                 error: (issue) =>
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (issue as any).code === 'invalid_type' &&
-                        issue['received'] === 'undefined'
-                        ? 'Role is required'
-                        : 'Invalid role',
-            })
-            .refine(
-                (val) => val !== UserRole.ADMIN && val !== UserRole.SUPER_ADMIN,
-                {
-                    message:
-                        'Cannot register as ADMIN or SUPER_ADMIN via public endpoint',
-                },
-            ),
-        latitude: z.number({
-            error: (issue) =>
-                issue.code === 'invalid_type' && issue['received'] === 'undefined'
-                    ? 'Latitude is required'
-                    : 'Invalid latitude',
-        }),
-        longitude: z.number({
-            error: (issue) =>
-                issue.code === 'invalid_type' && issue['received'] === 'undefined'
-                    ? 'Longitude is required'
-                    : 'Invalid longitude',
-        }),
-    }),
+                    issue.code === 'invalid_type' && issue['received'] === 'undefined'
+                        ? 'Longitude is required'
+                        : 'Invalid longitude',
+            }),
+        })
+        .refine(
+            (data) => {
+                if (data.role === UserRole.USER) {
+                    return data.name !== undefined && data.name.trim().length > 0;
+                }
+                if (data.role === UserRole.ORGANIZATION) {
+                    return data.orgName !== undefined && data.orgName.trim().length > 0;
+                }
+                return false;
+            },
+            {
+                message:
+                    'Name is required for USER role. orgName is required for ORGANIZATION role',
+                path: ['name'],
+            },
+        ),
 });
 
 const loginValidationSchema = z.object({

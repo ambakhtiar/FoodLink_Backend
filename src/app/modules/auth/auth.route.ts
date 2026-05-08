@@ -52,7 +52,7 @@ router.post(
     AuthController.googleLogin,
 );
 
-router.patch(
+router.post(
     '/complete-profile',
     auth(),
     validateRequest(AuthValidation.completeProfileSchema),

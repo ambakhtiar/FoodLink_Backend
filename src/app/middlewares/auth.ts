@@ -1,4 +1,4 @@
-import { AccountStatus, UserRole } from '@prisma/client';
+import { AccountStatus, UserRole } from '../../generated/prisma';
 import { NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
 import jwt, { JwtPayload } from 'jsonwebtoken';
@@ -62,7 +62,11 @@ const auth = (...requiredRoles: UserRole[]) => {
             }
 
             // Attach user to request
-            req.user = decoded as JwtPayload & { userId: string; role: UserRole };
+            req.user = decoded as JwtPayload & {
+                userId: string;
+                role: UserRole;
+                status: AccountStatus;
+            };
             next();
         },
     );

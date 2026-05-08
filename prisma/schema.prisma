@@ -1,9 +1,13 @@
+// This is your Prisma schema file
+// https://pris.ly/d/prisma-schema
+
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
+    output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+    provider = "postgresql"
 }
 
 enum UserRole {
