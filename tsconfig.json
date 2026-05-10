@@ -1,13 +1,12 @@
 {
     "compilerOptions": {
-        "ignoreDeprecations": "5.0", // donot change this 5.0 is ok
         "target": "ES2022",
         "module": "NodeNext",
         "moduleResolution": "NodeNext",
-        "baseUrl": ".",
+        "rootDir": "src",
         "paths": {
             "@/*": [
-                "src/*"
+                "./src/*"
             ]
         },
         "outDir": "./dist",
@@ -38,6 +37,7 @@
     ],
     "exclude": [
         "node_modules",
-        "dist"
+        "dist",
+        "prisma.config.ts"
     ]
 }

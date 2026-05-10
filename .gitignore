@@ -12,7 +12,7 @@ AGENT.md
 CLAUDE.md
 .prettierrc
 .windsurfrules
-
+.prettierrc.json
 
 
 /generated/prisma

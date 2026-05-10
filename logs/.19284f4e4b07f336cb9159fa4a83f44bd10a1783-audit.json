@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "E:\\Coding\\Web\\Web L2\\foodlink-backend\\logs\\.19284f4e4b07f336cb9159fa4a83f44bd10a1783-audit.json",
+    "files": [
+        {
+            "date": 1778307963441,
+            "name": "E:\\Coding\\Web\\Web L2\\foodlink-backend\\logs\\error-2026-05-09.log",
+            "hash": "42fdd9b17c865eff235234b2fef0d9dd05e6304271a943c31b046789e6fb84da"
+        },
+        {
+            "date": 1778387887032,
+            "name": "E:\\Coding\\Web\\Web L2\\foodlink-backend\\logs\\error-2026-05-10.log",
+            "hash": "dd55b3e3d561d3ff7336d0e4b6a4c9933391bb541811bf7d837f272b69fe9127"
+        }
+    ],
+    "hashType": "sha256"
+}

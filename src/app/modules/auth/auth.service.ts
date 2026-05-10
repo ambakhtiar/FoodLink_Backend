@@ -297,14 +297,9 @@ const resetPassword = async (
 const googleLogin = async (payload: {
     googleToken: string;
 }): Promise<{ accessToken: string }> => {
-    const client = new OAuth2Client(config.google_client_id);
-
-    const ticket = await client.verifyIdToken({
-        idToken: payload.googleToken,
-        audience: config.google_client_id,
-    });
-
-    const payload_google = ticket.getPayload();
+    // Fetch user info from Google using access_token
+    const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${payload.googleToken}`);
+    const payload_google = await response.json();
 
     if (!payload_google || !payload_google.email) {
         throw new AppError(httpStatus.BAD_REQUEST, 'Invalid Google token');

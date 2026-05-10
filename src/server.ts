@@ -10,6 +10,12 @@ async function main() {
 
     const server: Server = app.listen(5000, () => {
         logger.info('Server is running on port 5000');
+        console.log(`
+            🚀 Server is running!
+            📡 Port: 5000
+            🔗 URL: http://localhost:5000
+            ✨ Ready to handle requests
+            `);
     });
 
     const exitHandler = () => {

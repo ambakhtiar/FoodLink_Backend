@@ -63,7 +63,7 @@ const createPost = async (payload: TCreatePostInput): Promise<Post> => {
             longitude,
             imageUrl: imageUrl ?? null,
             estimatedShelfLife: estimatedShelfLife ?? null,
-            metadata: metadata ?? null,
+            ...(metadata !== undefined && { metadata }),
             authorId,
         },
     });
