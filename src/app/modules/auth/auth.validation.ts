@@ -33,7 +33,7 @@ const registerValidationSchema = z.object({
                     issue.code === 'invalid_type' && issue['received'] === 'undefined'
                         ? 'Phone number is required'
                         : 'Invalid phone number',
-            }),
+            }).regex(/^\+8801[3-9]\d{8}$/, 'Invalid Bangladesh phone number. Format: +8801XXXXXXXXX'),
             role: z
                 .nativeEnum(UserRole, {
                     error: (issue) =>
@@ -224,7 +224,7 @@ const completeProfileSchema = z.object({
                 issue.code === 'invalid_type' && issue['received'] === 'undefined'
                     ? 'Phone number is required'
                     : 'Invalid phone number',
-        }),
+        }).regex(/^\+8801[3-9]\d{8}$/, 'Invalid Bangladesh phone number. Format: +8801XXXXXXXXX'),
         latitude: z.number({
             error: (issue) =>
                 issue.code === 'invalid_type' && issue['received'] === 'undefined'

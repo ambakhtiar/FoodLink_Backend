@@ -17,4 +17,8 @@ export default {
         process.env['CLOUDINARY_UPLOAD_FOLDER'] || 'FoodLink',
     gemini_api_key: process.env['GEMINI_API_KEY'],
     google_client_id: process.env['GOOGLE_CLIENT_ID'],
+    smtp_host: process.env['SMTP_HOST'],
+    smtp_port: process.env['SMTP_PORT'] || 587,
+    smtp_user: process.env['SMTP_USER'],
+    smtp_pass: process.env['SMTP_PASS'],
 };

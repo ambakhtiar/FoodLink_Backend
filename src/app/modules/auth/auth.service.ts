@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import config from '../../config';
 import AppError from '../../utils/AppError';
 import prisma from '../../utils/prisma';
+import { MailHelper } from '../../utils/mailHelper';
 import { TJWTPayload } from './auth.interface';
 
 const generateAccessToken = (user: User): string => {
@@ -246,8 +247,15 @@ const forgotPassword = async (email: string): Promise<void> => {
         data: { otp, otpExpiry },
     });
 
-    // Simulate sending email
-    console.log(`[OTP] Email: ${email} | OTP: ${otp} | Expires: ${otpExpiry.toISOString()}`);
+    // Send actual email
+    await MailHelper.sendEmail(
+        email,
+        'Your FoodLink Security Code',
+        'otp',
+        { otp }
+    );
+
+    console.log(`[OTP Sent] Email: ${email} | OTP: ${otp}`);
 };
 
 const verifyOtp = async (email: string, otp: string): Promise<void> => {
