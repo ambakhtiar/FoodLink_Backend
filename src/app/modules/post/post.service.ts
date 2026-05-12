@@ -37,10 +37,17 @@ const createPost = async (payload: TCreatePostInput): Promise<Post> => {
 
     // Send ONLY the FIRST image buffer to the Gemini AI service
     if (type === PostType.DONATION && imageUrls && imageUrls.length > 0) {
-        const aiDetails = await AiService.generateFoodDetails(imageUrls[0]);
-        postTitle = aiDetails.title;
-        postDescription = aiDetails.description;
-        estimatedShelfLife = aiDetails.estimatedShelfLife;
+        try {
+            const aiDetails = await AiService.generateFoodDetails(imageUrls[0], title, description);
+            postTitle = aiDetails.title;
+            postDescription = aiDetails.description;
+            estimatedShelfLife = aiDetails.estimatedShelfLife;
+        } catch (error) {
+            console.error('AI Generation failed during post creation, falling back to manual details', error);
+            // Fallback: use user provided title/description or keep defaults
+            postTitle = title;
+            postDescription = description;
+        }
     }
 
     if (!postTitle || !postDescription) {
@@ -310,8 +317,122 @@ const deletePost = async (id: string, userId: string) => {
     return null;
 };
 
+const getAllPosts = async (query: {
+    searchTerm?: string;
+    category?: PostCategory;
+    type?: PostType;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    page?: number;
+    limit?: number;
+    userId?: string;
+}) => {
+    const {
+        searchTerm,
+        category,
+        type,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+        page = 1,
+        limit = 10,
+        userId,
+    } = query;
+
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.PostWhereInput = {
+        status: 'AVAILABLE',
+    };
+
+    if (searchTerm) {
+        where.OR = [
+            { title: { contains: searchTerm, mode: 'insensitive' } },
+            { description: { contains: searchTerm, mode: 'insensitive' } },
+        ];
+    }
+
+    if (category) {
+        where.category = category;
+    }
+
+    if (type) {
+        where.type = type;
+    }
+
+    const [posts, totalCount] = await Promise.all([
+        prisma.post.findMany({
+            where,
+            orderBy: {
+                [sortBy]: sortOrder,
+            },
+            skip,
+            take: limit,
+            select: {
+                id: true,
+                title: true,
+                description: true,
+                imageUrls: true,
+                type: true,
+                category: true,
+                quantity: true,
+                status: true,
+                likesCount: true,
+                commentsCount: true,
+                createdAt: true,
+                estimatedShelfLife: true,
+                author: {
+                    select: {
+                        id: true,
+                        profilePictureUrl: true,
+                        userProfile: {
+                            select: { name: true, impactScore: true },
+                        },
+                        organizationProfile: {
+                            select: { orgName: true, impactScore: true },
+                        },
+                    },
+                },
+            },
+        }),
+        prisma.post.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    // Compute isLikedByMe for each post if userId is provided
+    let likedPostIds = new Set<string>();
+    if (userId && posts.length > 0) {
+        const postIds = posts.map((p: any) => p.id);
+        const userLikes = await prisma.like.findMany({
+            where: {
+                userId,
+                postId: { in: postIds },
+            },
+            select: { postId: true },
+        });
+        likedPostIds = new Set(userLikes.map((l: any) => l.postId));
+    }
+
+    const postsWithLiked = posts.map((p: any) => ({
+        ...p,
+        isLikedByMe: likedPostIds.has(p.id),
+    }));
+
+    return {
+        meta: {
+            totalCount,
+            currentPage: page,
+            limit,
+            totalPages,
+            hasNextPage: page < totalPages,
+        },
+        data: postsWithLiked,
+    };
+};
+
 export const PostService = {
     createPost,
+    getAllPosts,
     fetchAvailablePostsWithinRadius,
     getMyPosts,
     getPostById,

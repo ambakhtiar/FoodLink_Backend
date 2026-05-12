@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import httpStatus from 'http-status';
-import { uploadImageToCloudinary } from '../../utils/cloudinary';
 import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import { PostService } from './post.service';
+import { uploadImageToCloudinary, uploadMultipleImagesToCloudinary } from '../../utils/cloudinary';
 
 const createPostHandler = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.userId;
@@ -22,6 +22,9 @@ const createPostHandler = catchAsync(async (req: Request, res: Response) => {
 
   const result = await PostService.createPost({
     ...req.body,
+    quantity: Number(req.body.quantity),
+    latitude: Number(req.body.latitude),
+    longitude: Number(req.body.longitude),
     authorId: userId,
     imageUrls: imageUrls,
   });
@@ -122,8 +125,33 @@ const deletePostHandler = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllPostsHandler = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+  const query = {
+    searchTerm: req.query.searchTerm ? String(req.query.searchTerm) : undefined,
+    category: req.query.category as any,
+    type: req.query.type as any,
+    sortBy: req.query.sortBy ? String(req.query.sortBy) : 'createdAt',
+    sortOrder: (req.query.sortOrder === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc',
+    page: req.query.page ? parseInt(req.query.page as string) : 1,
+    limit: req.query.limit ? parseInt(req.query.limit as string) : 10,
+    userId,
+  };
+
+  const result = await PostService.getAllPosts(query);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Posts fetched successfully',
+    data: result.data,
+    meta: result.meta,
+  });
+});
+
 export const PostController = {
   createPostHandler,
+  getAllPostsHandler,
   nearbyPostsHandler,
   getMyPostsHandler,
   getPostByIdHandler,

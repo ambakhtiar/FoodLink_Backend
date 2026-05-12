@@ -12,6 +12,8 @@ export type TGeneratedFoodDetails = {
 
 const generateFoodDetails = async (
   imageUrl: string,
+  userTitle?: string,
+  userDescription?: string,
 ): Promise<TGeneratedFoodDetails> => {
   const apiKey = config.gemini_api_key;
   if (!apiKey) {
@@ -37,9 +39,14 @@ const generateFoodDetails = async (
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-    const prompt =
+    let prompt =
       'Analyze this food image and return ONLY a JSON object with exactly these keys: "title" (string, max 5 words), "description" (string, 1-2 sentences), "estimatedShelfLife" (ISO 8601 date string). Do not include markdown, code blocks, or any extra text.';
 
+    if (userTitle || userDescription) {
+      prompt += '\n\nThe user provided some manual details for this food. Please enhance or incorporate these details based on the image, and only add what is missing or correct inaccuracies:';
+      if (userTitle) prompt += `\nUser Title: "${userTitle}"`;
+      if (userDescription) prompt += `\nUser Description: "${userDescription}"`;
+    }
     const result = await model.generateContent([
       prompt,
       {
@@ -86,10 +93,11 @@ const generateFoodDetails = async (
       estimatedShelfLife,
     };
   } catch (error) {
+    console.error('AI Generation Error:', error);
     if (error instanceof AppError) throw error;
     throw new AppError(
       httpStatus.INTERNAL_SERVER_ERROR,
-      'AI generation failed',
+      `AI generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
     );
   }
 };

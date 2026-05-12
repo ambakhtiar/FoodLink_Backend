@@ -8,6 +8,8 @@ import { PostValidation } from './post.validation';
 
 const router = Router();
 
+router.get('/', optionalAuth, PostController.getAllPostsHandler);
+
 router.post(
   '/create',
   auth(),
