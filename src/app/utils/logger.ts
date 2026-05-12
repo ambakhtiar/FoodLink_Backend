@@ -40,7 +40,7 @@ const logger = createLogger({
         errors({ stack: true }),
         json(),
     ),
-    defaultMeta: { service: 'foodlink-backend' },
+    defaultMeta: { service: 'helpshare-backend' },
     transports: [
         new DailyRotateFile({
             ...dailyRotateFileOptions,

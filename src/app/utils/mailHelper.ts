@@ -21,7 +21,7 @@ const sendEmail = async (to: string, subject: string, templateName: string, data
         const html = await ejs.renderFile(templatePath, data);
 
         const info = await transporter.sendMail({
-            from: `"FoodLink" <${config.smtp_user}>`,
+            from: `"HelpShare" <${config.smtp_user}>`,
             to,
             subject,
             html,

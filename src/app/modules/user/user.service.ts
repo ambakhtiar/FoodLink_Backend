@@ -33,7 +33,7 @@ const updateMyProfile = async (
 
     // Update Profile level fields based on role
     if (user.role === UserRole.USER) {
-        return await prisma.userProfile.update({
+        await prisma.userProfile.update({
             where: { userId },
             data: {
                 ...(payload.name && { name: payload.name }),
@@ -41,10 +41,8 @@ const updateMyProfile = async (
                 ...(payload.longitude && { longitude: payload.longitude }),
             },
         });
-    }
-
-    if (user.role === UserRole.ORGANIZATION) {
-        return await prisma.organizationProfile.update({
+    } else if (user.role === UserRole.ORGANIZATION) {
+        await prisma.organizationProfile.update({
             where: { userId },
             data: {
                 ...(payload.orgName && { orgName: payload.orgName }),
@@ -54,10 +52,8 @@ const updateMyProfile = async (
                 ...(payload.registrationNumber && { registrationNumber: payload.registrationNumber }),
             },
         });
-    }
-
-    if (user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN) {
-        return await prisma.adminProfile.update({
+    } else if (user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN) {
+        await prisma.adminProfile.update({
             where: { userId },
             data: {
                 ...(payload.name && { name: payload.name }),
@@ -65,7 +61,15 @@ const updateMyProfile = async (
         });
     }
 
-    throw new AppError(httpStatus.BAD_REQUEST, 'Invalid user role for profile update');
+    // Return the full updated user with profile
+    return await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+            userProfile: true,
+            organizationProfile: true,
+            adminProfile: true,
+        },
+    });
 };
 
 export const UserService = {

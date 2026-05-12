@@ -28,4 +28,17 @@ router.patch(
     UserController.updateMyProfile,
 );
 
+router.patch(
+    '/profile-picture',
+    auth(),
+    upload.single('file'),
+    UserController.updateProfilePicture,
+);
+
+router.delete(
+    '/profile-picture',
+    auth(),
+    UserController.deleteProfilePicture,
+);
+
 export const UserRoutes = router;

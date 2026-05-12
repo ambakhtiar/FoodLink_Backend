@@ -250,7 +250,7 @@ const forgotPassword = async (email: string): Promise<void> => {
     // Send actual email
     await MailHelper.sendEmail(
         email,
-        'Your FoodLink Security Code',
+        'Your HelpShare Security Code',
         'otp',
         { otp }
     );

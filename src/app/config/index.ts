@@ -14,7 +14,7 @@ export default {
     cloudinary_api_key: process.env['CLOUDINARY_API_KEY'],
     cloudinary_api_secret: process.env['CLOUDINARY_API_SECRET'],
     cloudinary_upload_folder:
-        process.env['CLOUDINARY_UPLOAD_FOLDER'] || 'FoodLink',
+        process.env['CLOUDINARY_UPLOAD_FOLDER'] || 'HelpShare',
     gemini_api_key: process.env['GEMINI_API_KEY'],
     google_client_id: process.env['GOOGLE_CLIENT_ID'],
     smtp_host: process.env['SMTP_HOST'],

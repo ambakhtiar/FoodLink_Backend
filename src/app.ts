@@ -17,7 +17,7 @@ app.use(globalRateLimiter);
 app.use('/api/v1', router);
 
 app.get('/', (_req: Request, res: Response) => {
-  res.send('Welcome to FoodLink AI Backend!');
+  res.send('Welcome to HelpShare AI Backend!');
 });
 
 // Global Error Handler

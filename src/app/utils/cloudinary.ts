@@ -13,7 +13,7 @@ const uploadImageToCloudinary = (fileBuffer: Buffer): Promise<string> => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
-        folder: process.env['CLOUDINARY_UPLOAD_FOLDER'] || 'FoodLink',
+        folder: process.env['CLOUDINARY_UPLOAD_FOLDER'] || 'HelpShare',
         resource_type: 'image',
       },
       (error, result) => {
@@ -40,4 +40,36 @@ const uploadImageToCloudinary = (fileBuffer: Buffer): Promise<string> => {
   });
 };
 
-export { uploadImageToCloudinary };
+/**
+ * Deletes an image from Cloudinary using its public_id.
+ */
+const deleteImageFromCloudinary = async (publicId: string): Promise<void> => {
+  try {
+    await cloudinary.uploader.destroy(publicId);
+  } catch (error) {
+    throw new AppError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      'Failed to delete image from Cloudinary',
+    );
+  }
+};
+
+/**
+ * Extracts the public_id from a standard Cloudinary URL.
+ * URL format: https://res.cloudinary.com/cloud_name/image/upload/v12345/folder/id.jpg
+ */
+const extractPublicIdFromUrl = (url: string): string | null => {
+  try {
+    const regex = /\/upload\/(?:v\d+\/)?(.+)\.[a-z]+$/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  } catch (error) {
+    return null;
+  }
+};
+
+export { 
+    uploadImageToCloudinary, 
+    deleteImageFromCloudinary, 
+    extractPublicIdFromUrl 
+};
