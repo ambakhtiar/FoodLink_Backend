@@ -7,6 +7,9 @@ import { TransactionRoutes } from '../modules/transaction/transaction.route';
 
 import { UserRoutes } from '../modules/user/user.route';
 
+import { LikeRoutes } from '../modules/like/like.route';
+import { CommentRoutes } from '../modules/comment/comment.route';
+
 type TModuleRoute = {
     path: string;
     route: Router;
@@ -26,6 +29,14 @@ const moduleRoutes: TModuleRoute[] = [
     {
         path: '/post',
         route: PostRoutes,
+    },
+    {
+        path: '/post',
+        route: LikeRoutes,
+    },
+    {
+        path: '/post',
+        route: CommentRoutes,
     },
     {
         path: '/transaction',

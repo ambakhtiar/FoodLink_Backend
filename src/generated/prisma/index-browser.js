@@ -171,13 +171,31 @@ exports.Prisma.PostScalarFieldEnum = {
   category: 'category',
   title: 'title',
   description: 'description',
-  imageUrl: 'imageUrl',
+  imageUrls: 'imageUrls',
   quantity: 'quantity',
   estimatedShelfLife: 'estimatedShelfLife',
   metadata: 'metadata',
   latitude: 'latitude',
   longitude: 'longitude',
   status: 'status',
+  likesCount: 'likesCount',
+  commentsCount: 'commentsCount',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.LikeScalarFieldEnum = {
+  id: 'id',
+  postId: 'postId',
+  userId: 'userId',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.CommentScalarFieldEnum = {
+  id: 'id',
+  content: 'content',
+  postId: 'postId',
+  userId: 'userId',
+  parentId: 'parentId',
   createdAt: 'createdAt'
 };
 
@@ -283,6 +301,8 @@ exports.Prisma.ModelName = {
   OrganizationProfile: 'OrganizationProfile',
   AdminProfile: 'AdminProfile',
   Post: 'Post',
+  Like: 'Like',
+  Comment: 'Comment',
   TransactionRequest: 'TransactionRequest',
   Review: 'Review',
   AiLog: 'AiLog'

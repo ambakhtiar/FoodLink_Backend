@@ -8,15 +8,22 @@ import { PostService } from './post.service';
 const createPostHandler = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.userId;
 
-  let imageUrl: string | undefined;
-  if (req.file) {
-    imageUrl = await uploadImageToCloudinary(req.file.buffer);
+  let imageUrls: string[] = [];
+  
+  // Handle multiple images from upload.array('images', 3)
+  const files = req.files as Express.Multer.File[];
+  if (files && files.length > 0) {
+    const fileBuffers = files.map(file => file.buffer);
+    imageUrls = await uploadMultipleImagesToCloudinary(fileBuffers);
+  } else if (req.body.imageUrls) {
+    // If urls are passed directly (e.g. from a draft)
+    imageUrls = Array.isArray(req.body.imageUrls) ? req.body.imageUrls : [req.body.imageUrls];
   }
 
   const result = await PostService.createPost({
     ...req.body,
     authorId: userId,
-    imageUrl: imageUrl || req.body.imageUrl,
+    imageUrls: imageUrls,
   });
 
   sendResponse(res, {
@@ -78,7 +85,8 @@ const getMyPostsHandler = catchAsync(async (req: Request, res: Response) => {
 
 const getPostByIdHandler = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
-  const result = await PostService.getPostById(id);
+  const userId = req.user?.userId;
+  const result = await PostService.getPostById(id, userId);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

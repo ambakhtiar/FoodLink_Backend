@@ -10,7 +10,7 @@ export type TCreatePostInput = {
     quantity: number;
     latitude: number;
     longitude: number;
-    imageUrl?: string;
+    imageUrls?: string[];
     title?: string;
     description?: string;
     metadata?: Prisma.InputJsonValue;
@@ -24,7 +24,7 @@ const createPost = async (payload: TCreatePostInput): Promise<Post> => {
         quantity,
         latitude,
         longitude,
-        imageUrl,
+        imageUrls,
         title,
         description,
         metadata,
@@ -35,8 +35,9 @@ const createPost = async (payload: TCreatePostInput): Promise<Post> => {
     let postDescription = description;
     let estimatedShelfLife: Date | undefined;
 
-    if (type === PostType.DONATION && imageUrl) {
-        const aiDetails = await AiService.generateFoodDetails(imageUrl);
+    // Send ONLY the FIRST image buffer to the Gemini AI service
+    if (type === PostType.DONATION && imageUrls && imageUrls.length > 0) {
+        const aiDetails = await AiService.generateFoodDetails(imageUrls[0]);
         postTitle = aiDetails.title;
         postDescription = aiDetails.description;
         estimatedShelfLife = aiDetails.estimatedShelfLife;
@@ -61,7 +62,7 @@ const createPost = async (payload: TCreatePostInput): Promise<Post> => {
             quantity,
             latitude,
             longitude,
-            imageUrl: imageUrl ?? null,
+            imageUrls: imageUrls || [],
             estimatedShelfLife: estimatedShelfLife ?? null,
             ...(metadata !== undefined && { metadata }),
             authorId,
@@ -170,7 +171,7 @@ const getMyPosts = async (
     };
 };
 
-const getPostById = async (id: string) => {
+const getPostById = async (id: string, userId?: string) => {
     const post = await prisma.post.findUnique({
         where: { id },
         include: {
@@ -198,6 +199,18 @@ const getPostById = async (id: string) => {
                     },
                 },
             },
+            likes: {
+                select: {
+                    userId: true,
+                    user: {
+                        include: {
+                            userProfile: { select: { name: true } },
+                            organizationProfile: { select: { orgName: true } },
+                        },
+                    },
+                },
+                take: 5, // Show a few users who liked it
+            },
         },
     });
 
@@ -205,7 +218,12 @@ const getPostById = async (id: string) => {
         throw new AppError(httpStatus.NOT_FOUND, 'Post not found');
     }
 
-    return post;
+    const isLikedByMe = userId ? post.likes.some(like => like.userId === userId) : false;
+
+    return {
+        ...post,
+        isLikedByMe,
+    };
 };
 
 const updatePost = async (

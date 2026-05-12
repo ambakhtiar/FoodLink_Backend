@@ -5,3 +5,11 @@
 {"level":"error","message":"Password does not match","method":"POST","path":"/api/v1/auth/login","service":"helpshare-backend","stack":"Error: Password does not match\n    at Object.loginUser (E:\\Coding\\Web\\Web L2\\foodlink-backend\\src\\app\\modules\\auth\\auth.service.ts:135:15)\n    at E:\\Coding\\Web\\Web L2\\foodlink-backend\\src\\app\\modules\\auth\\auth.controller.ts:22:20","statusCode":403,"timestamp":"2026-05-12 12:48:09"}
 {"level":"info","message":"Server is running on port 5000","service":"helpshare-backend","timestamp":"2026-05-12 12:53:02"}
 {"level":"error","message":"Password does not match","method":"POST","path":"/api/v1/auth/login","service":"helpshare-backend","stack":"Error: Password does not match\n    at Object.loginUser (E:\\Coding\\Web\\Web L2\\foodlink-backend\\src\\app\\modules\\auth\\auth.service.ts:135:15)\n    at E:\\Coding\\Web\\Web L2\\foodlink-backend\\src\\app\\modules\\auth\\auth.controller.ts:22:20","statusCode":403,"timestamp":"2026-05-12 12:57:35"}
+{"level":"info","message":"Server is running on port 5000","service":"helpshare-backend","timestamp":"2026-05-12 13:50:07"}
+{"level":"info","message":"Server is running on port 5000","service":"helpshare-backend","timestamp":"2026-05-12 13:50:19"}
+{"level":"info","message":"Server is running on port 5000","service":"helpshare-backend","timestamp":"2026-05-12 13:50:34"}
+{"level":"info","message":"Server is running on port 5000","service":"helpshare-backend","timestamp":"2026-05-12 13:51:02"}
+{"level":"info","message":"Server is running on port 5000","service":"helpshare-backend","timestamp":"2026-05-12 13:52:35"}
+{"level":"info","message":"Server is running on port 5000","service":"helpshare-backend","timestamp":"2026-05-12 13:52:41"}
+{"level":"info","message":"Server is running on port 5000","service":"helpshare-backend","timestamp":"2026-05-12 13:53:32"}
+{"level":"info","message":"Server is running on port 5000","service":"helpshare-backend","timestamp":"2026-05-12 13:55:31"}

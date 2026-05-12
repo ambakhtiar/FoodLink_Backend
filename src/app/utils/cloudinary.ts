@@ -68,8 +68,14 @@ const extractPublicIdFromUrl = (url: string): string | null => {
   }
 };
 
+const uploadMultipleImagesToCloudinary = async (fileBuffers: Buffer[]): Promise<string[]> => {
+  const uploadPromises = fileBuffers.map((buffer) => uploadImageToCloudinary(buffer));
+  return Promise.all(uploadPromises);
+};
+
 export { 
-    uploadImageToCloudinary, 
+    uploadImageToCloudinary,
+    uploadMultipleImagesToCloudinary,
     deleteImageFromCloudinary, 
     extractPublicIdFromUrl 
 };

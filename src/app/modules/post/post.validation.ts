@@ -49,7 +49,7 @@ const createPostSchema = z.object({
                         : 'Invalid longitude',
             }),
         ),
-        imageUrl: z.string().optional(),
+        imageUrls: z.array(z.string()).optional(),
         title: z.string().optional(),
         description: z.string().optional(),
         metadata: z.record(z.unknown()).optional(),

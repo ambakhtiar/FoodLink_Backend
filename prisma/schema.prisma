@@ -2,12 +2,12 @@
 // https://pris.ly/d/prisma-schema
 
 generator client {
-    provider = "prisma-client-js"
-    output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
-    provider = "postgresql"
+  provider = "postgresql"
 }
 
 enum UserRole {
@@ -77,20 +77,22 @@ model User {
   // Core Relations
   posts               Post[]
   transactionRequests TransactionRequest[]
-  reviewsGiven        Review[] @relation("Reviewer")
-  reviewsReceived     Review[] @relation("Reviewee")
+  reviewsGiven        Review[]             @relation("Reviewer")
+  reviewsReceived     Review[]             @relation("Reviewee")
+  likes               Like[]
+  comments            Comment[]
 
   @@map("users")
 }
 
 model UserProfile {
-  id          String  @id @default(uuid())
-  userId      String  @unique
-  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String @id @default(uuid())
+  userId      String @unique
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   name        String
   latitude    Float?
   longitude   Float?
-  impactScore Float   @default(0)
+  impactScore Float  @default(0)
 
   @@map("user_profiles")
 }
@@ -127,18 +129,49 @@ model Post {
   category           PostCategory
   title              String
   description        String
-  imageUrl           String?
+  imageUrls          String[]
   quantity           Int
   estimatedShelfLife DateTime?
   metadata           Json?
   latitude           Float
   longitude          Float
   status             PostStatus   @default(AVAILABLE)
+  likesCount         Int          @default(0)
+  commentsCount      Int          @default(0)
   createdAt          DateTime     @default(now())
 
   transactionRequests TransactionRequest[]
+  likes               Like[]
+  comments            Comment[]
 
   @@map("posts")
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@map("likes")
+}
+
+model Comment {
+  id        String    @id @default(uuid())
+  content   String
+  postId    String
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    Comment?  @relation("CommentToComment", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentToComment")
+  createdAt DateTime  @default(now())
+
+  @@map("comments")
 }
 
 model TransactionRequest {
