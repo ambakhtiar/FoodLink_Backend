@@ -13,7 +13,7 @@ CLAUDE.md
 .prettierrc
 .windsurfrules
 .prettierrc.json
-
+.env
 
 /generated/prisma
 
