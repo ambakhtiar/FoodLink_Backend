@@ -43,7 +43,7 @@ const createTransactionRequest = async (
 
         await tx.post.update({
             where: { id: payload.postId },
-            data: { status: PostStatus.PENDING },
+            data: { status: PostStatus.PENDING_HANDOVER },
         });
 
         return transactionRequest;

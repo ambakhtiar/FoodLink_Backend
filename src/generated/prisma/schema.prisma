@@ -31,9 +31,16 @@ enum PostType {
 
 enum PostStatus {
   AVAILABLE
-  PENDING
+  PENDING_HANDOVER
   COMPLETED
   EXPIRED
+}
+
+enum DeliveryType {
+  RECEIVER_PICKUP
+  DONOR_DELIVERY
+  COURIER
+  NEGOTIABLE
 }
 
 enum TransactionStatus {
@@ -81,6 +88,8 @@ model User {
   reviewsReceived     Review[]             @relation("Reviewee")
   likes               Like[]
   comments            Comment[]
+  sessions            Session[]
+  notifications       Notification[]
 
   @@map("users")
 }
@@ -136,6 +145,7 @@ model Post {
   latitude           Float
   longitude          Float
   status             PostStatus   @default(AVAILABLE)
+  deliveryType       DeliveryType @default(NEGOTIABLE)
   likesCount         Int          @default(0)
   commentsCount      Int          @default(0)
   createdAt          DateTime     @default(now())
@@ -213,4 +223,30 @@ model AiLog {
   createdAt  DateTime @default(now())
 
   @@map("ai_logs")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshToken String   @unique
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@map("sessions")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String
+  type      String // E.g., 'INFO', 'REQUEST', 'ACCEPT'
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
 }

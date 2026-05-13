@@ -3,7 +3,7 @@ import httpStatus from 'http-status';
 import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import { PostService } from './post.service';
-import { uploadImageToCloudinary, uploadMultipleImagesToCloudinary } from '../../utils/cloudinary';
+import { uploadMultipleImagesToCloudinary } from '../../utils/cloudinary';
 
 const createPostHandler = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.userId;
@@ -128,13 +128,13 @@ const deletePostHandler = catchAsync(async (req: Request, res: Response) => {
 const getAllPostsHandler = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.userId;
   const query = {
-    searchTerm: req.query.searchTerm ? String(req.query.searchTerm) : undefined,
-    category: req.query.category as any,
-    type: req.query.type as any,
-    sortBy: req.query.sortBy ? String(req.query.sortBy) : 'createdAt',
-    sortOrder: (req.query.sortOrder === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc',
-    page: req.query.page ? parseInt(req.query.page as string) : 1,
-    limit: req.query.limit ? parseInt(req.query.limit as string) : 10,
+    searchTerm: req.query['searchTerm'] ? String(req.query['searchTerm']) : undefined,
+    category: req.query['category'] as any,
+    type: req.query['type'] as any,
+    sortBy: req.query['sortBy'] ? String(req.query['sortBy']) : 'createdAt',
+    sortOrder: (req.query['sortOrder'] === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc',
+    page: req.query['page'] ? parseInt(req.query['page'] as string) : 1,
+    limit: req.query['limit'] ? parseInt(req.query['limit'] as string) : 10,
     userId,
   };
 

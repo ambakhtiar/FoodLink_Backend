@@ -38,7 +38,7 @@ const createPost = async (payload: TCreatePostInput): Promise<Post> => {
     // Send ONLY the FIRST image buffer to the Gemini AI service
     if (type === PostType.DONATION && imageUrls && imageUrls.length > 0) {
         try {
-            const aiDetails = await AiService.generateFoodDetails(imageUrls[0], title, description);
+            const aiDetails = await AiService.generateFoodDetails(imageUrls[0] as string, title || '', description || '');
             postTitle = aiDetails.title;
             postDescription = aiDetails.description;
             estimatedShelfLife = aiDetails.estimatedShelfLife;
@@ -265,9 +265,18 @@ const updatePost = async (
         );
     }
 
+    const {
+        id: _id,
+        authorId: _authorId,
+        createdAt: _createdAt,
+        updatedAt: _updatedAt,
+        commentsCount: _commentsCount,
+        ...updateData
+    } = payload as any;
+
     const result = await prisma.post.update({
         where: { id },
-        data: payload,
+        data: updateData as any,
     });
 
     return result;
@@ -318,14 +327,14 @@ const deletePost = async (id: string, userId: string) => {
 };
 
 const getAllPosts = async (query: {
-    searchTerm?: string;
-    category?: PostCategory;
-    type?: PostType;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-    page?: number;
-    limit?: number;
-    userId?: string;
+    searchTerm?: string | undefined;
+    category?: PostCategory | undefined;
+    type?: PostType | undefined;
+    sortBy?: string | undefined;
+    sortOrder?: 'asc' | 'desc' | undefined;
+    page?: number | undefined;
+    limit?: number | undefined;
+    userId?: string | undefined;
 }) => {
     const {
         searchTerm,

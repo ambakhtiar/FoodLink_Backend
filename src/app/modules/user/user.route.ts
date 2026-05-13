@@ -18,7 +18,7 @@ router.patch(
     '/update-profile',
     auth(),
     upload.single('profilePicture'),
-    (req, res, next) => {
+    (req, _res, next) => {
         if (req.body.data) {
             req.body = JSON.parse(req.body.data);
         }

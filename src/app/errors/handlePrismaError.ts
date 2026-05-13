@@ -9,7 +9,7 @@ const handlePrismaError = (
   let message = 'Database Error';
 
   if (err.code === 'P2002') {
-    const target = (err.meta?.target as string[]) || ['unknown'];
+    const target = (err.meta?.['target'] as string[]) || ['unknown'];
     statusCode = 409;
     message = 'Duplicate Entry';
     errorSources = [
@@ -24,7 +24,7 @@ const handlePrismaError = (
     errorSources = [
       {
         path: '',
-        message: (err.meta?.cause as string) || 'Record does not exist',
+        message: (err.meta?.['cause'] as string) || 'Record does not exist',
       },
     ];
   } else {

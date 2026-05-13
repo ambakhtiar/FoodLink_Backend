@@ -5,7 +5,7 @@ import sendResponse from '../../utils/sendResponse';
 import { CommentService } from './comment.service';
 
 const createCommentHandler = catchAsync(async (req: Request, res: Response) => {
-    const { id: postId } = req.params;
+    const { id: postId } = req.params as { id: string };
     const userId = req.user.userId;
     const { content, parentId } = req.body;
 
@@ -25,7 +25,7 @@ const createCommentHandler = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getCommentsHandler = catchAsync(async (req: Request, res: Response) => {
-    const { id: postId } = req.params;
+    const { id: postId } = req.params as { id: string };
 
     const result = await CommentService.getCommentsByPostId(postId);
 

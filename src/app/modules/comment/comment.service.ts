@@ -45,7 +45,7 @@ const createComment = async (payload: {
                 content,
                 postId,
                 userId,
-                parentId,
+                parentId: parentId || null,
             },
             include: {
                 user: {

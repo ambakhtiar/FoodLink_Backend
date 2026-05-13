@@ -1,4 +1,5 @@
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import express, { Application, Request, Response } from 'express';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import { globalRateLimiter } from './app/middlewares/rateLimiter';
@@ -6,8 +7,13 @@ import router from './app/routes';
 
 const app: Application = express();
 
+// Trust Proxy for accurate client IPs
+app.set('trust proxy', 1);
+
 // Parsers
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 app.use(cors());
 
 // Global Rate Limiter

@@ -24,7 +24,7 @@ const sendEmail = async (to: string, subject: string, templateName: string, data
             from: `"HelpShare" <${config.smtp_user}>`,
             to,
             subject,
-            html,
+            html: html as string,
         });
 
         return info;

@@ -62,7 +62,7 @@ const extractPublicIdFromUrl = (url: string): string | null => {
   try {
     const regex = /\/upload\/(?:v\d+\/)?(.+)\.[a-z]+$/;
     const match = url.match(regex);
-    return match ? match[1] : null;
+    return match?.[1] || null;
   } catch (error) {
     return null;
   }

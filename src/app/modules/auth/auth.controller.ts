@@ -3,6 +3,7 @@ import httpStatus from 'http-status';
 import catchAsync from '../../utils/catchAsync';
 import sendResponse from '../../utils/sendResponse';
 import { AuthService } from './auth.service';
+import config from '../../config';
 
 const registerUser = catchAsync(async (req: Request, res: Response) => {
     const result = await AuthService.registerUser(req.body);
@@ -19,13 +20,26 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const loginUser = catchAsync(async (req: Request, res: Response) => {
-    const result = await AuthService.loginUser(req.body);
+    const userAgent = req.headers['user-agent'];
+    const ipAddress = req.ip;
+
+    const result = await AuthService.loginUser(req.body, { userAgent, ipAddress });
+    const { refreshToken, accessToken } = result;
+
+    // Set refresh token in cookie
+    const cookieOptions = {
+        secure: config.NODE_ENV === 'production',
+        httpOnly: true,
+        sameSite: 'strict' as const,
+    };
+
+    res.cookie('refreshToken', refreshToken, cookieOptions);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: 'User logged in successfully',
-        data: result,
+        data: { accessToken },
     });
 });
 
@@ -95,25 +109,78 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 });
 
 const googleLogin = catchAsync(async (req: Request, res: Response) => {
-    const result = await AuthService.googleLogin(req.body);
+    const userAgent = req.headers['user-agent'];
+    const ipAddress = req.ip;
+
+    const result = await AuthService.googleLogin(req.body, { userAgent, ipAddress });
+    const { refreshToken, accessToken } = result;
+
+    const cookieOptions = {
+        secure: config.NODE_ENV === 'production',
+        httpOnly: true,
+        sameSite: 'strict' as const,
+    };
+
+    res.cookie('refreshToken', refreshToken, cookieOptions);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: 'Google login successful',
-        data: result,
+        data: { accessToken },
     });
 });
 
 const completeProfile = catchAsync(async (req: Request, res: Response) => {
     const userId = (req as any).user.userId as string;
-    const result = await AuthService.completeProfile(userId, req.body);
+    const userAgent = req.headers['user-agent'];
+    const ipAddress = req.ip;
+
+    const result = await AuthService.completeProfile(userId, req.body, { userAgent, ipAddress });
+    const { refreshToken, accessToken } = result;
+
+    const cookieOptions = {
+        secure: config.NODE_ENV === 'production',
+        httpOnly: true,
+        sameSite: 'strict' as const,
+    };
+
+    res.cookie('refreshToken', refreshToken, cookieOptions);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
         message: 'Profile completed successfully',
+        data: { accessToken },
+    });
+});
+
+const refreshToken = catchAsync(async (req: Request, res: Response) => {
+    const { refreshToken } = req.cookies;
+    const result = await AuthService.refreshToken(refreshToken);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Access token retrieved successfully',
         data: result,
+    });
+});
+
+const logout = catchAsync(async (req: Request, res: Response) => {
+    const { refreshToken } = req.cookies;
+    
+    if (refreshToken) {
+        await AuthService.logout(refreshToken);
+    }
+
+    res.clearCookie('refreshToken');
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Logged out successfully',
+        data: null,
     });
 });
 
@@ -127,4 +194,6 @@ export const AuthController = {
     resetPassword,
     googleLogin,
     completeProfile,
+    refreshToken,
+    logout,
 };

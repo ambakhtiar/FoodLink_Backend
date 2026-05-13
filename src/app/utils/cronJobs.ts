@@ -1,6 +1,8 @@
 import cron from 'node-cron';
 import prisma from './prisma';
 
+import { PostStatus } from '../../generated/prisma';
+
 const setupCronJobs = () => {
   // Run every hour at minute 0
   cron.schedule('0 * * * *', async () => {
@@ -9,14 +11,14 @@ const setupCronJobs = () => {
       const result = await prisma.post.updateMany({
         where: {
           status: {
-            in: ['AVAILABLE', 'PENDING'],
+            in: [PostStatus.AVAILABLE, PostStatus.PENDING_HANDOVER],
           },
           estimatedShelfLife: {
             lt: new Date(),
           },
         },
         data: {
-          status: 'EXPIRED',
+          status: PostStatus.EXPIRED,
         },
       });
 

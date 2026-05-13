@@ -1,6 +1,6 @@
 import { AccountStatus, User, UserRole } from '../../../generated/prisma';
 import bcrypt from 'bcrypt';
-import { OAuth2Client } from 'google-auth-library';
+
 import httpStatus from 'http-status';
 import jwt from 'jsonwebtoken';
 import config from '../../config';
@@ -20,8 +20,23 @@ const generateAccessToken = (user: User): string => {
         jwtPayload,
         config.jwt_access_secret as string,
         {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             expiresIn: config.jwt_access_expires_in as any,
+        },
+    );
+};
+
+const generateRefreshToken = (user: User): string => {
+    const jwtPayload: TJWTPayload = {
+        userId: user.id,
+        role: user.role,
+        status: user.status,
+    };
+
+    return jwt.sign(
+        jwtPayload,
+        config.jwt_refresh_secret as string,
+        {
+            expiresIn: config.jwt_refresh_expires_in as any,
         },
     );
 };
@@ -103,10 +118,16 @@ const registerUser = async (payload: {
     return newUser;
 };
 
-const loginUser = async (payload: {
-    email: string;
-    password: string;
-}): Promise<{ accessToken: string }> => {
+const loginUser = async (
+    payload: {
+        email: string;
+        password: string;
+    },
+    clientInfo: {
+        userAgent?: string | undefined;
+        ipAddress?: string | undefined;
+    }
+): Promise<{ accessToken: string; refreshToken: string }> => {
     // Find user
     const user = await prisma.user.findUnique({
         where: {
@@ -136,9 +157,22 @@ const loginUser = async (payload: {
     }
 
     const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+    // Save session
+    await prisma.session.create({
+        data: {
+            userId: user.id,
+            refreshToken,
+            userAgent: clientInfo.userAgent || null,
+            ipAddress: clientInfo.ipAddress || null,
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+        },
+    });
 
     return {
         accessToken,
+        refreshToken,
     };
 };
 
@@ -224,10 +258,15 @@ const changePassword = async (
         Number(config.bcrypt_salt_rounds),
     );
 
-    await prisma.user.update({
-        where: { id: userId },
-        data: { passwordHash: hashedNewPassword },
-    });
+    await prisma.$transaction([
+        prisma.user.update({
+            where: { id: userId },
+            data: { passwordHash: hashedNewPassword },
+        }),
+        prisma.session.deleteMany({
+            where: { userId },
+        }),
+    ]);
 };
 
 const forgotPassword = async (email: string): Promise<void> => {
@@ -292,19 +331,32 @@ const resetPassword = async (
         Number(config.bcrypt_salt_rounds),
     );
 
-    await prisma.user.update({
-        where: { email },
-        data: {
-            passwordHash: hashedNewPassword,
-            otp: null,
-            otpExpiry: null,
-        },
-    });
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    await prisma.$transaction([
+        prisma.user.update({
+            where: { email },
+            data: {
+                passwordHash: hashedNewPassword,
+                otp: null,
+                otpExpiry: null,
+            },
+        }),
+        prisma.session.deleteMany({
+            where: { userId: user!.id },
+        }),
+    ]);
 };
 
-const googleLogin = async (payload: {
-    googleToken: string;
-}): Promise<{ accessToken: string }> => {
+const googleLogin = async (
+    payload: {
+        googleToken: string;
+    },
+    clientInfo: {
+        userAgent?: string | undefined;
+        ipAddress?: string | undefined;
+    }
+): Promise<{ accessToken: string; refreshToken: string }> => {
     // Fetch user info from Google using access_token
     const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${payload.googleToken}`);
     const payload_google = await response.json();
@@ -339,8 +391,20 @@ const googleLogin = async (payload: {
     }
 
     const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    return { accessToken };
+    // Save session
+    await prisma.session.create({
+        data: {
+            userId: user.id,
+            refreshToken,
+            userAgent: clientInfo.userAgent || null,
+            ipAddress: clientInfo.ipAddress || null,
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+    });
+
+    return { accessToken, refreshToken };
 };
 
 const completeProfile = async (
@@ -350,7 +414,11 @@ const completeProfile = async (
         latitude: number;
         longitude: number;
     },
-): Promise<{ accessToken: string }> => {
+    clientInfo: {
+        userAgent?: string | undefined;
+        ipAddress?: string | undefined;
+    }
+): Promise<{ accessToken: string; refreshToken: string }> => {
     const user = await prisma.user.findUnique({
         where: { id: userId },
         include: { userProfile: true },
@@ -388,8 +456,65 @@ const completeProfile = async (
     });
 
     const accessToken = generateAccessToken(updatedUser);
+    const refreshToken = generateRefreshToken(updatedUser);
+
+    // Save session
+    await prisma.session.create({
+        data: {
+            userId: updatedUser.id,
+            refreshToken,
+            userAgent: clientInfo.userAgent || null,
+            ipAddress: clientInfo.ipAddress || null,
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+    });
+
+    return { accessToken, refreshToken };
+};
+
+const refreshToken = async (token: string): Promise<{ accessToken: string }> => {
+    // Verify token
+    let verifiedToken: any;
+    try {
+        verifiedToken = jwt.verify(
+            token,
+            config.jwt_refresh_secret as string
+        );
+    } catch (error) {
+        throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid refresh token');
+    }
+
+    const { userId } = verifiedToken;
+
+    // Check if session exists and is not expired
+    const session = await prisma.session.findUnique({
+        where: { refreshToken: token },
+    });
+
+    if (!session || new Date() > session.expiresAt) {
+        throw new AppError(httpStatus.UNAUTHORIZED, 'Session expired or invalid');
+    }
+
+    // Get user
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+    });
+
+    if (!user) {
+        throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    const accessToken = generateAccessToken(user);
 
     return { accessToken };
+};
+
+const logout = async (token: string): Promise<void> => {
+    await prisma.session.delete({
+        where: { refreshToken: token },
+    }).catch(() => {
+        // Ignore if already deleted
+    });
 };
 
 export const AuthService = {
@@ -402,4 +527,6 @@ export const AuthService = {
     resetPassword,
     googleLogin,
     completeProfile,
+    refreshToken,
+    logout,
 };

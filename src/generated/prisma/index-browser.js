@@ -178,6 +178,7 @@ exports.Prisma.PostScalarFieldEnum = {
   latitude: 'latitude',
   longitude: 'longitude',
   status: 'status',
+  deliveryType: 'deliveryType',
   likesCount: 'likesCount',
   commentsCount: 'commentsCount',
   createdAt: 'createdAt'
@@ -224,6 +225,26 @@ exports.Prisma.AiLogScalarFieldEnum = {
   actionType: 'actionType',
   prompt: 'prompt',
   response: 'response',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.SessionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  refreshToken: 'refreshToken',
+  userAgent: 'userAgent',
+  ipAddress: 'ipAddress',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.NotificationScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  message: 'message',
+  type: 'type',
+  isRead: 'isRead',
+  link: 'link',
   createdAt: 'createdAt'
 };
 
@@ -283,9 +304,16 @@ exports.PostCategory = exports.$Enums.PostCategory = {
 
 exports.PostStatus = exports.$Enums.PostStatus = {
   AVAILABLE: 'AVAILABLE',
-  PENDING: 'PENDING',
+  PENDING_HANDOVER: 'PENDING_HANDOVER',
   COMPLETED: 'COMPLETED',
   EXPIRED: 'EXPIRED'
+};
+
+exports.DeliveryType = exports.$Enums.DeliveryType = {
+  RECEIVER_PICKUP: 'RECEIVER_PICKUP',
+  DONOR_DELIVERY: 'DONOR_DELIVERY',
+  COURIER: 'COURIER',
+  NEGOTIABLE: 'NEGOTIABLE'
 };
 
 exports.TransactionStatus = exports.$Enums.TransactionStatus = {
@@ -305,7 +333,9 @@ exports.Prisma.ModelName = {
   Comment: 'Comment',
   TransactionRequest: 'TransactionRequest',
   Review: 'Review',
-  AiLog: 'AiLog'
+  AiLog: 'AiLog',
+  Session: 'Session',
+  Notification: 'Notification'
 };
 
 /**
