@@ -1,4 +1,4 @@
-import { AccountStatus, UserRole } from '../../generated/prisma';
+import { AccountStatus, UserRole } from '@prisma/client';
 import { NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
 import jwt, { JwtPayload } from 'jsonwebtoken';

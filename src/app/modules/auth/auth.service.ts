@@ -1,4 +1,4 @@
-import { AccountStatus, User, UserRole } from '../../../generated/prisma';
+import { AccountStatus, User, UserRole } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import httpStatus from 'http-status';
 import jwt from 'jsonwebtoken';

@@ -1,4 +1,4 @@
-import { UserRole } from '../../../generated/prisma';
+import { UserRole } from '@prisma/client';
 import httpStatus from 'http-status';
 import AppError from '../../utils/AppError';
 import prisma from '../../utils/prisma';

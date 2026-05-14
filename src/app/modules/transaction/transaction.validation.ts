@@ -1,4 +1,4 @@
-import { TransactionStatus } from '../../../generated/prisma';
+import { TransactionStatus } from '@prisma/client';
 import { z } from 'zod';
 
 const createTransactionSchema = z.object({

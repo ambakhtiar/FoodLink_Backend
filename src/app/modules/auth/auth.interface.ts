@@ -1,4 +1,4 @@
-import { AccountStatus, UserRole } from '../../../generated/prisma';
+import { AccountStatus, UserRole } from '@prisma/client';
 
 export type TLoginUser = {
     email: string;

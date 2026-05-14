@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import prisma from './prisma';
 
-import { PostStatus } from '../../generated/prisma';
+import { PostStatus } from '@prisma/client';
 
 const setupCronJobs = () => {
   // Run every hour at minute 0

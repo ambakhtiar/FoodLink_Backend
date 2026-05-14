@@ -1,4 +1,4 @@
-import { Post, PostCategory, PostType, Prisma } from '../../../generated/prisma';
+import { Post, PostCategory, PostType, Prisma } from '@prisma/client';
 import httpStatus from 'http-status';
 import AppError from '../../utils/AppError';
 import prisma from '../../utils/prisma';

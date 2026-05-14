@@ -33,15 +33,30 @@ const dailyRotateFileOptions = {
     maxFiles: '14d',
 };
 
-const logger = createLogger({
-    level: process.env['NODE_ENV'] === 'production' ? 'info' : 'debug',
-    format: combine(
-        timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-        errors({ stack: true }),
-        json(),
-    ),
-    defaultMeta: { service: 'helpshare-backend' },
-    transports: [
+const transportsList: any[] = [];
+
+// Always add console transport for Vercel and production environments to capture logs
+if (process.env['NODE_ENV'] === 'production' || process.env['VERCEL'] === '1') {
+    transportsList.push(
+        new transports.Console({
+            format: combine(
+                timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+                errors({ stack: true }),
+                json(),
+            ),
+        })
+    );
+} else {
+    // Local development can use files and pretty console
+    transportsList.push(
+        new transports.Console({
+            format: combine(
+                colorize({ all: true }),
+                timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+                errors({ stack: true }),
+                consoleFormat,
+            ),
+        }),
         new DailyRotateFile({
             ...dailyRotateFileOptions,
             filename: 'success-%DATE%.log',
@@ -51,21 +66,19 @@ const logger = createLogger({
             ...dailyRotateFileOptions,
             filename: 'error-%DATE%.log',
             level: 'error',
-        }),
-    ],
-});
-
-if (process.env['NODE_ENV'] !== 'production') {
-    logger.add(
-        new transports.Console({
-            format: combine(
-                colorize({ all: true }),
-                timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-                errors({ stack: true }),
-                consoleFormat,
-            ),
-        }),
+        })
     );
 }
+
+const logger = createLogger({
+    level: process.env['NODE_ENV'] === 'production' ? 'info' : 'debug',
+    format: combine(
+        timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+        errors({ stack: true }),
+        json(),
+    ),
+    defaultMeta: { service: 'helpshare-backend' },
+    transports: transportsList,
+});
 
 export default logger;
