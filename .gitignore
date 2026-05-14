@@ -14,7 +14,7 @@ CLAUDE.md
 .windsurfrules
 .prettierrc.json
 .env 
-
+api
 /generated/prisma
 
 # Auto-generated agent rules (personalized per developer)

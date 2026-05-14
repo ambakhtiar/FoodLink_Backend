@@ -9,4 +9,5 @@ export type TJWTPayload = {
     userId: string;
     role: UserRole;
     status: AccountStatus;
+    needsPasswordChange: boolean;
 };

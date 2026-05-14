@@ -13,6 +13,7 @@ const generateAccessToken = (user: User): string => {
         userId: user.id,
         role: user.role,
         status: user.status,
+        needsPasswordChange: user.needsPasswordChange,
     };
 
     return jwt.sign(
@@ -29,6 +30,7 @@ const generateRefreshToken = (user: User): string => {
         userId: user.id,
         role: user.role,
         status: user.status,
+        needsPasswordChange: user.needsPasswordChange,
     };
 
     return jwt.sign(
@@ -213,6 +215,7 @@ const getMe = async (userId: string) => {
         phone: user.phone,
         role: user.role,
         status: user.status,
+        needsPasswordChange: user.needsPasswordChange,
         authProvider: user.authProvider,
         profilePictureUrl: user.profilePictureUrl,
         name:
@@ -271,7 +274,10 @@ const changePassword = async (
     await prisma.$transaction([
         prisma.user.update({
             where: { id: userId },
-            data: { passwordHash: hashedNewPassword },
+            data: { 
+                passwordHash: hashedNewPassword,
+                needsPasswordChange: false
+            },
         }),
         prisma.session.deleteMany({
             where: { userId },
