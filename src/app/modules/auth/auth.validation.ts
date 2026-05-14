@@ -111,10 +111,9 @@ const loginValidationSchema = z.object({
             .string({
                 error: (issue) =>
                     issue.code === 'invalid_type' && issue['received'] === 'undefined'
-                        ? 'Email is required'
-                        : 'Invalid email',
-            })
-            .email('Invalid email format'),
+                        ? 'Email or phone is required'
+                        : 'Invalid email or phone',
+            }),
         password: z.string({
             error: (issue) =>
                 issue.code === 'invalid_type' && issue['received'] === 'undefined'

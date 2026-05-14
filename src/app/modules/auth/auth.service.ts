@@ -1,6 +1,5 @@
 import { AccountStatus, User, UserRole } from '../../../generated/prisma';
 import bcrypt from 'bcrypt';
-
 import httpStatus from 'http-status';
 import jwt from 'jsonwebtoken';
 import config from '../../config';
@@ -120,7 +119,7 @@ const registerUser = async (payload: {
 
 const loginUser = async (
     payload: {
-        email: string;
+        email: string; // This now acts as a generic identifier (email or phone)
         password: string;
     },
     clientInfo: {
@@ -128,15 +127,25 @@ const loginUser = async (
         ipAddress?: string | undefined;
     }
 ): Promise<{ accessToken: string; refreshToken: string }> => {
-    // Find user
-    const user = await prisma.user.findUnique({
+    // Find user by email OR phone
+    const user = await prisma.user.findFirst({
         where: {
-            email: payload.email,
+            OR: [
+                { email: payload.email },
+                { phone: payload.email }
+            ]
         },
     });
 
     if (!user) {
         throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    if (user.status === AccountStatus.PENDING) {
+        throw new AppError(
+            httpStatus.FORBIDDEN,
+            'Your organization account is waiting for admin approval.'
+        );
     }
 
     if (!user.passwordHash) {
@@ -204,6 +213,7 @@ const getMe = async (userId: string) => {
         phone: user.phone,
         role: user.role,
         status: user.status,
+        authProvider: user.authProvider,
         profilePictureUrl: user.profilePictureUrl,
         name:
             user.userProfile?.name ??
@@ -278,6 +288,13 @@ const forgotPassword = async (email: string): Promise<void> => {
         throw new AppError(httpStatus.NOT_FOUND, 'User not found');
     }
 
+    if (!user.passwordHash || user.authProvider === 'google') {
+        throw new AppError(
+            httpStatus.FORBIDDEN,
+            'This account uses Google Login. Password reset is not available.'
+        );
+    }
+
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
 
@@ -326,12 +343,23 @@ const resetPassword = async (
 ): Promise<void> => {
     await verifyOtp(email, otp);
 
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+        throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    if (!user.passwordHash || user.authProvider === 'google') {
+        throw new AppError(
+            httpStatus.FORBIDDEN,
+            'This account uses Google Login. Password reset is not available.'
+        );
+    }
+
     const hashedNewPassword = await bcrypt.hash(
         newPassword,
         Number(config.bcrypt_salt_rounds),
     );
-
-    const user = await prisma.user.findUnique({ where: { email } });
 
     await prisma.$transaction([
         prisma.user.update({
