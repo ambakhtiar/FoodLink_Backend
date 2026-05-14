@@ -41,4 +41,9 @@ router.delete(
     UserController.deleteProfilePicture,
 );
 
+router.get(
+    '/public-profile/:id',
+    UserController.getPublicProfile,
+);
+
 export const UserRoutes = router;

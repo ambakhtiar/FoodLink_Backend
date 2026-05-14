@@ -100,8 +100,21 @@ const deleteProfilePicture = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getPublicProfile = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const result = await UserService.getPublicProfile(id);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Public profile retrieved successfully',
+        data: result,
+    });
+});
+
 export const UserController = {
     updateMyProfile,
     updateProfilePicture,
     deleteProfilePicture,
+    getPublicProfile,
 };

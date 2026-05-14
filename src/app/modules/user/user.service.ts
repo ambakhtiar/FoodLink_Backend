@@ -72,6 +72,51 @@ const updateMyProfile = async (
     });
 };
 
+const getPublicProfile = async (userId: string) => {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            id: true,
+            role: true,
+            status: true,
+            profilePictureUrl: true,
+            isVerified: true,
+            createdAt: true,
+            userProfile: {
+                select: {
+                    name: true,
+                    impactScore: true,
+                    latitude: true,
+                    longitude: true,
+                },
+            },
+            organizationProfile: {
+                select: {
+                    orgName: true,
+                    establishedYear: true,
+                    registrationNumber: true,
+                    impactScore: true,
+                    latitude: true,
+                    longitude: true,
+                },
+            },
+            adminProfile: {
+                select: {
+                    name: true,
+                    department: true,
+                },
+            },
+        },
+    });
+
+    if (!user) {
+        throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    return user;
+};
+
 export const UserService = {
     updateMyProfile,
+    getPublicProfile,
 };
