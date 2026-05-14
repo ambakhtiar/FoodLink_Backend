@@ -117,6 +117,21 @@ const fetchAvailablePostsWithinRadius = async (
     // Query for paginated data using Prisma
     const posts = await prisma.post.findMany({
         where,
+        include: {
+            author: {
+                include: {
+                    userProfile: { select: { name: true, impactScore: true } },
+                    organizationProfile: { select: { orgName: true, impactScore: true } },
+                },
+            },
+            _count: {
+                select: {
+                    transactionRequests: true,
+                    likes: true,
+                    comments: true,
+                },
+            },
+        },
         orderBy: {
             createdAt: 'desc',
         },
@@ -131,7 +146,11 @@ const fetchAvailablePostsWithinRadius = async (
             limit,
             totalPages: Math.ceil(totalCount / limit),
         },
-        data: posts,
+        data: posts.map((post: any) => ({
+            ...post,
+            likesCount: post._count?.likes || 0,
+            commentsCount: post._count?.comments || 0,
+        })),
     };
 };
 
@@ -148,9 +167,17 @@ const getMyPosts = async (
                 authorId: userId,
             },
             include: {
+                author: {
+                    include: {
+                        userProfile: { select: { name: true, impactScore: true } },
+                        organizationProfile: { select: { orgName: true, impactScore: true } },
+                    },
+                },
                 _count: {
                     select: {
                         transactionRequests: true,
+                        likes: true,
+                        comments: true,
                     },
                 },
             },
@@ -174,7 +201,11 @@ const getMyPosts = async (
             limit,
             totalPages: Math.ceil(totalCount / limit),
         },
-        data: posts,
+        data: posts.map((post: any) => ({
+            ...post,
+            likesCount: post._count?.likes || 0,
+            commentsCount: post._count?.comments || 0,
+        })),
     };
 };
 
