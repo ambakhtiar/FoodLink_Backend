@@ -8,7 +8,7 @@ import { TransactionValidation } from './transaction.validation';
 const router = Router();
 
 router.post(
-    '/create',
+    '/request',
     auth(UserRole.USER, UserRole.ORGANIZATION),
     validateRequest(TransactionValidation.createTransactionSchema),
     TransactionController.handleCreateTransaction,
@@ -31,6 +31,12 @@ router.patch(
     auth(UserRole.USER, UserRole.ORGANIZATION),
     validateRequest(TransactionValidation.updateTransactionStatusSchema),
     TransactionController.handleRespondTransaction,
+);
+
+router.patch(
+    '/:id/complete',
+    auth(UserRole.USER, UserRole.ORGANIZATION),
+    TransactionController.handleCompleteTransaction,
 );
 
 export const TransactionRoutes = router;

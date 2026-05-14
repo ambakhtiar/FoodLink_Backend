@@ -12,6 +12,7 @@ const createReview = async (payload: {
 }): Promise<Review> => {
     const transaction = await prisma.transactionRequest.findUnique({
         where: { id: payload.transactionId },
+        include: { post: true },
     });
 
     if (!transaction) {
@@ -22,6 +23,17 @@ const createReview = async (payload: {
         throw new AppError(
             httpStatus.BAD_REQUEST,
             'Can only review completed transactions',
+        );
+    }
+
+    // Participant guard: reviewer must be the post author OR the transaction actor
+    const isAuthor = transaction.post.authorId === payload.reviewerId;
+    const isActor = transaction.actorId === payload.reviewerId;
+
+    if (!isAuthor && !isActor) {
+        throw new AppError(
+            httpStatus.FORBIDDEN,
+            'You were not part of this transaction',
         );
     }
 

@@ -15,4 +15,10 @@ router.get(
     CommentController.getCommentsHandler
 );
 
+router.delete(
+    '/comment/:commentId',
+    auth(),
+    CommentController.deleteCommentHandler
+);
+
 export const CommentRoutes = router;

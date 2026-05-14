@@ -79,9 +79,29 @@ const handleRespondTransaction = catchAsync(
     },
 );
 
+const handleCompleteTransaction = catchAsync(
+    async (req: Request, res: Response) => {
+        const { userId } = req.user;
+        const { id } = req.params;
+
+        const result = await TransactionService.completeTransaction(
+            userId,
+            id as string,
+        );
+
+        sendResponse(res, {
+            statusCode: httpStatus.OK,
+            success: true,
+            message: 'Transaction marked as completed successfully',
+            data: result,
+        });
+    },
+);
+
 export const TransactionController = {
     handleCreateTransaction,
     handleGetMyRequests,
     handleGetRequestsByPostId,
     handleRespondTransaction,
+    handleCompleteTransaction,
 };

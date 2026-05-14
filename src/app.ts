@@ -14,7 +14,15 @@ app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(cors());
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow any origin
+      callback(null, true);
+    },
+    credentials: true,
+  })
+);
 
 // Global Rate Limiter
 app.use(globalRateLimiter);

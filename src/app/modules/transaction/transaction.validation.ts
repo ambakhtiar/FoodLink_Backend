@@ -9,12 +9,13 @@ const createTransactionSchema = z.object({
                     ? 'Post ID is required'
                     : 'Invalid Post ID',
         }),
-        requestedQuantity: z.string({
+        quantity: z.string({
             error: (issue) =>
                 issue.code === 'invalid_type' && issue['received'] === 'undefined'
-                    ? 'Requested quantity is required'
-                    : 'Invalid requested quantity',
+                    ? 'Quantity is required'
+                    : 'Invalid quantity',
         }),
+        deliveryNote: z.string().optional(),
     }),
 });
 

@@ -37,7 +37,22 @@ const getCommentsHandler = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const deleteCommentHandler = catchAsync(async (req: Request, res: Response) => {
+    const { commentId } = req.params as { commentId: string };
+    const userId = req.user.userId;
+
+    await CommentService.deleteComment(commentId, userId);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Comment deleted successfully',
+        data: null,
+    });
+});
+
 export const CommentController = {
     createCommentHandler,
     getCommentsHandler,
+    deleteCommentHandler,
 };

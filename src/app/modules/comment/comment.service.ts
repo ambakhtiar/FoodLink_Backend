@@ -106,7 +106,44 @@ const getCommentsByPostId = async (postId: string) => {
     return comments;
 };
 
+const deleteComment = async (commentId: string, userId: string) => {
+    const comment = await prisma.comment.findUnique({
+        where: { id: commentId },
+        include: { replies: true },
+    });
+
+    if (!comment) {
+        throw new AppError(httpStatus.NOT_FOUND, 'Comment not found');
+    }
+
+    if (comment.userId !== userId) {
+        throw new AppError(httpStatus.FORBIDDEN, 'You can only delete your own comments');
+    }
+
+    return await prisma.$transaction(async (tx) => {
+        // Count comments to be deleted (parent + replies)
+        // Since we have Cascade delete in Prisma schema, deleting parent will delete replies.
+        const repliesCount = comment.replies.length;
+
+        await tx.comment.delete({
+            where: { id: commentId },
+        });
+
+        await tx.post.update({
+            where: { id: comment.postId },
+            data: {
+                commentsCount: {
+                    decrement: 1 + repliesCount,
+                },
+            },
+        });
+
+        return { success: true };
+    });
+};
+
 export const CommentService = {
     createComment,
     getCommentsByPostId,
+    deleteComment,
 };

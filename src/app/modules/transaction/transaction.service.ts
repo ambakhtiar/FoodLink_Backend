@@ -5,7 +5,7 @@ import prisma from '../../utils/prisma';
 
 const createTransactionRequest = async (
     userId: string,
-    payload: { postId: string; requestedQuantity: string },
+    payload: { postId: string; quantity: string; deliveryNote?: string },
 ): Promise<TransactionRequest> => {
     const post = await prisma.post.findUnique({
         where: { id: payload.postId },
@@ -36,14 +36,20 @@ const createTransactionRequest = async (
             data: {
                 postId: payload.postId,
                 actorId: userId,
-                quantity: payload.requestedQuantity,
+                quantity: payload.quantity,
+                message: payload.deliveryNote || null,
                 status: TransactionStatus.PENDING,
             },
         });
 
-        await tx.post.update({
-            where: { id: payload.postId },
-            data: { status: PostStatus.PENDING_HANDOVER },
+        // Create Notification for the post author
+        await tx.notification.create({
+            data: {
+                userId: post.authorId,
+                message: 'Someone requested your item.',
+                type: 'REQUEST',
+                link: `/feed/${post.id}`,
+            },
         });
 
         return transactionRequest;
@@ -154,7 +160,7 @@ const respondToTransaction = async (
         // Update Post Status based on response
         let postStatus: PostStatus = PostStatus.AVAILABLE;
         if (status === TransactionStatus.APPROVED) {
-            postStatus = PostStatus.COMPLETED;
+            postStatus = PostStatus.PENDING_HANDOVER;
         } else if (status === TransactionStatus.REJECTED) {
             postStatus = PostStatus.AVAILABLE;
         }
@@ -164,7 +170,82 @@ const respondToTransaction = async (
             data: { status: postStatus },
         });
 
+        // Create Notification for the requester
+        const notificationMessage = status === TransactionStatus.APPROVED 
+            ? 'Your request was approved!' 
+            : 'Your request was rejected.';
+
+        await tx.notification.create({
+            data: {
+                userId: transactionRequest.actorId,
+                message: notificationMessage,
+                type: status,
+                link: `/feed/${transactionRequest.postId}`,
+            },
+        });
+
         return updatedTransaction;
+    });
+
+    return result;
+};
+
+const completeTransaction = async (
+    userId: string,
+    transactionId: string,
+): Promise<TransactionRequest> => {
+    const transactionRequest = await prisma.transactionRequest.findUnique({
+        where: { id: transactionId },
+        include: { post: true },
+    });
+
+    if (!transactionRequest) {
+        throw new AppError(httpStatus.NOT_FOUND, 'Transaction request not found');
+    }
+
+    if (transactionRequest.status !== TransactionStatus.APPROVED) {
+        throw new AppError(
+            httpStatus.BAD_REQUEST,
+            'Only approved transactions can be marked as completed',
+        );
+    }
+
+    const isAuthor = transactionRequest.post.authorId === userId;
+    const isActor = transactionRequest.actorId === userId;
+
+    if (!isAuthor && !isActor) {
+        throw new AppError(
+            httpStatus.FORBIDDEN,
+            'You are not authorized to complete this transaction',
+        );
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+        const updated = await tx.transactionRequest.update({
+            where: { id: transactionId },
+            data: { status: TransactionStatus.COMPLETED },
+        });
+
+        await tx.post.update({
+            where: { id: transactionRequest.postId },
+            data: { status: PostStatus.COMPLETED },
+        });
+
+        // Notify the other party
+        const notifyUserId = isAuthor
+            ? transactionRequest.actorId
+            : transactionRequest.post.authorId;
+
+        await tx.notification.create({
+            data: {
+                userId: notifyUserId,
+                message: 'A transaction has been marked as completed.',
+                type: 'COMPLETED',
+                link: `/feed/${transactionRequest.postId}`,
+            },
+        });
+
+        return updated;
     });
 
     return result;
@@ -175,4 +256,5 @@ export const TransactionService = {
     getMyRequests,
     getRequestsByPostId,
     respondToTransaction,
+    completeTransaction,
 };
