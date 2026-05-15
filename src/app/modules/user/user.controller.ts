@@ -102,7 +102,7 @@ const deleteProfilePicture = catchAsync(async (req: Request, res: Response) => {
 
 const getPublicProfile = catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
-    const result = await UserService.getPublicProfile(id);
+    const result = await UserService.getPublicProfile(id as string);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,

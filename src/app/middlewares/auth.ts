@@ -66,6 +66,7 @@ const auth = (...requiredRoles: UserRole[]) => {
                 userId: string;
                 role: UserRole;
                 status: AccountStatus;
+                needsPasswordChange: boolean;
             };
             next();
         },

@@ -23,4 +23,7 @@ export default {
     smtp_port: process.env['SMTP_PORT'] || 587,
     smtp_user: process.env['SMTP_USER'],
     smtp_pass: process.env['SMTP_PASS'],
+    superadmin_email: process.env['SUPERADMIN_EMAIL'],
+    superadmin_phone: process.env['SUPERADMIN_PHONE'],
+    superadmin_pass: process.env['SUPERADMIN_PASS'],
 };

@@ -7,15 +7,11 @@ import setupCronJobs from './app/utils/cronJobs';
 async function main() {
     // Initialize Cron Jobs
     setupCronJobs();
+    const PORT = process.env['PORT'] || 5000;
 
-    const server: Server = app.listen(5000, () => {
-        logger.info('Server is running on port 5000');
-        console.log(`
-            🚀 Server is running!
-            📡 Port: 5000
-            🔗 URL: http://localhost:5000
-            ✨ Ready to handle requests
-            `);
+    const server: Server = app.listen(PORT, () => {
+        logger.info(`Server is running on http://localhost:${PORT}`);
+        console.log(`Server is running on http://localhost:${PORT}`);
     });
 
     const exitHandler = () => {

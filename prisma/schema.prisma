@@ -33,6 +33,7 @@ enum PostStatus {
   PENDING_HANDOVER
   COMPLETED
   EXPIRED
+  SUSPENDED
 }
 
 enum DeliveryType {

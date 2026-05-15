@@ -33,6 +33,7 @@ const optionalAuth = async (req: Request, _res: Response, next: NextFunction) =>
                 userId: string;
                 role: UserRole;
                 status: AccountStatus;
+                needsPasswordChange: boolean;
             };
         }
     } catch (_error) {

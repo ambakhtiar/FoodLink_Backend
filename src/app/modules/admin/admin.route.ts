@@ -7,12 +7,14 @@ import { AdminValidation } from './admin.validation';
 
 const router = Router();
 
+// ── Stats ─────────────────────────────────────────────────────────────────────
 router.get(
     '/stats',
     auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
     AdminController.getSystemStats,
 );
 
+// ── Users ─────────────────────────────────────────────────────────────────────
 router.get(
     '/users',
     auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
@@ -20,17 +22,59 @@ router.get(
 );
 
 router.patch(
-    '/users/:userId/verify',
+    '/users/:userId/status',
     auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
-    validateRequest(AdminValidation.verifyNGOSchema),
-    AdminController.verifyNGO,
+    validateRequest(AdminValidation.updateUserStatusSchema),
+    AdminController.updateUserStatus,
+);
+
+// ── Organizations ─────────────────────────────────────────────────────────────
+router.get(
+    '/organizations',
+    auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+    AdminController.getAllOrganizations,
 );
 
 router.patch(
-    '/users/:userId/ban',
+    '/organizations/:orgId/status',
     auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
-    validateRequest(AdminValidation.verifyNGOSchema),
-    AdminController.toggleBan,
+    validateRequest(AdminValidation.updateOrgStatusSchema),
+    AdminController.updateOrgStatus,
+);
+
+// ── Posts ─────────────────────────────────────────────────────────────────────
+router.get(
+    '/posts',
+    auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+    AdminController.getAllPosts,
+);
+
+router.patch(
+    '/posts/:postId/status',
+    auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+    validateRequest(AdminValidation.updatePostStatusSchema),
+    AdminController.updatePostStatus,
+);
+
+router.delete(
+    '/posts/:postId',
+    auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+    validateRequest(AdminValidation.postIdParamSchema),
+    AdminController.adminDeletePost,
+);
+
+// ── Admins ─────────────────────────────────────────────────────────────────────
+router.get(
+    '/admins',
+    auth(UserRole.SUPER_ADMIN),
+    AdminController.getAllAdmins,
+);
+
+router.post(
+    '/create',
+    auth(UserRole.SUPER_ADMIN),
+    validateRequest(AdminValidation.createAdminSchema),
+    AdminController.createAdmin,
 );
 
 export const AdminRoutes = router;
